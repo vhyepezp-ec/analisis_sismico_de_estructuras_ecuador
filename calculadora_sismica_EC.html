@@ -1,0 +1,2577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌋 Calculadora Sísmica NEC-15</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --border-radius: 12px;
+            --box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-secondary: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: var(--gradient-primary);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        header {
+            background: var(--gradient-secondary);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+            border-bottom: 5px solid var(--accent-color);
+        }
+        
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+        
+        .app-container {
+            display: flex;
+            min-height: 80vh;
+        }
+        
+        .sidebar {
+            width: 320px;
+            background: var(--light-color);
+            padding: 20px;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+            transition: var(--transition);
+        }
+        
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            font-size: 0.9em;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .step-number {
+            background: var(--secondary-color);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 0.9em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            color: var(--dark-color);
+            font-weight: 600;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            font-size: 0.95em;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: var(--secondary-color);
+            color: white;
+            border-left-color: var(--accent-color);
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .nav-item.active {
+            background: var(--secondary-color);
+            color: white;
+            border-left-color: var(--accent-color);
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .nav-icon {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            max-height: 80vh;
+            background: #f8f9fa;
+        }
+        
+        .section {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--secondary-color);
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-icon {
+            margin-right: 12px;
+            font-size: 1.3em;
+        }
+        
+        .subsection-title {
+            font-size: 1.3em;
+            margin: 25px 0 15px 0;
+            color: var(--dark-color);
+            padding-left: 15px;
+            border-left: 4px solid var(--warning-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .subsection-icon {
+            margin-right: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark-color);
+            font-size: 0.95em;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            font-size: 15px;
+            transition: var(--transition);
+            background: white;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--secondary-color);
+            transition: var(--transition);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .card h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-icon {
+            margin-right: 10px;
+            font-size: 1.1em;
+        }
+        
+        .factors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+        
+        .factor-item {
+            background: var(--light-color);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            border-left: 4px solid var(--accent-color);
+            transition: var(--transition);
+        }
+        
+        .factor-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .factor-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 5px 0;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .result-item {
+            background: var(--light-color);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            text-align: center;
+            transition: var(--transition);
+        }
+        
+        .result-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .result-item.highlight {
+            background: #e8f4fd;
+            border-left: 4px solid var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn:hover {
+            background: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(44, 62, 80, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn-icon {
+            margin-right: 8px;
+        }
+        
+        .btn-accent {
+            background: var(--accent-color);
+            box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+        }
+        
+        .btn-success {
+            background: var(--success-color);
+            box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-warning {
+            background: var(--warning-color);
+            box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
+        }
+        
+        .chart-container {
+            margin: 20px 0;
+            height: 400px;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            font-size: 0.9em;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .export-buttons {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .info-box {
+            background: #e8f4fd;
+            border-left: 4px solid var(--secondary-color);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: var(--border-radius);
+            font-size: 0.9em;
+        }
+        
+        .formula-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin: 12px 0;
+            font-family: 'Courier New', monospace;
+            border-left: 4px solid #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .calculation-steps {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin: 15px 0;
+            border-left: 4px solid var(--success-color);
+            font-size: 0.9em;
+        }
+        
+        .color-picker {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .color-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .color-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            border: 2px solid #ddd;
+            cursor: pointer;
+        }
+        
+        .option-description {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        .table-container {
+            max-height: 350px;
+            overflow-y: auto;
+            margin: 15px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .radio-table {
+            width: 100%;
+        }
+        
+        .radio-table tr {
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .radio-table tr:hover {
+            background-color: #f0f8ff;
+        }
+        
+        .radio-table tr.selected {
+            background-color: #e8f4fd;
+        }
+        
+        .radio-table input[type="radio"] {
+            width: auto;
+        }
+        
+        .summary-table {
+            width: 100%;
+            font-size: 0.95em;
+        }
+        
+        .summary-table th {
+            background: var(--dark-color);
+        }
+        
+        .summary-table td {
+            vertical-align: top;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        
+        .soil-f-custom {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .soil-f-custom .form-group {
+            margin-bottom: 0;
+        }
+        
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            align-items: center;
+        }
+        
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .zoom-btn:hover {
+            background: var(--primary-color);
+            transform: scale(1.1);
+        }
+        
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .preview-content {
+            background: white;
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 1000px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 15px;
+        }
+        
+        .close-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: var(--transition);
+        }
+        
+        .close-btn:hover {
+            transform: rotate(90deg);
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            font-size: 1.2em;
+        }
+        
+        @media (max-width: 1024px) {
+            .app-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+                max-height: 300px;
+            }
+            
+            .mobile-menu-btn {
+                display: flex;
+            }
+            
+            .sidebar.hidden {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .factors-grid, .results-grid {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .soil-f-custom {
+                grid-template-columns: 1fr;
+            }
+            
+            .color-picker {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .export-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-right: 0;
+            }
+            
+            .section-title {
+                font-size: 1.5em;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 15px;
+            }
+            
+            header {
+                padding: 20px 15px;
+            }
+            
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .content {
+                padding: 15px;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            .factors-grid, .results-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+    
+    <div class="container">
+        <header>
+            <h1>🌋 Calculadora Sísmica NEC-15</h1>
+            <p>Norma Ecuatoriana de la Construcción - Diseño Sismo Resistente</p>
+        </header>
+        
+        <div class="app-container">
+            <div class="sidebar" id="sidebar">
+                <div class="step-indicator">
+                    <div class="step-number">0</div>
+                    <span>📋 Información del Proyecto</span>
+                </div>
+                <a href="#" class="nav-item active" data-target="project-info">
+                    <span class="nav-icon">📝</span>
+                    ● Información del Proyecto
+                </a>
+                
+                <div class="step-indicator">
+                    <div class="step-number">1</div>
+                    <span>🏗️ Condiciones de Diseño</span>
+                </div>
+                <a href="#" class="nav-item" data-target="design-conditions">
+                    <span class="nav-icon">📍</span>
+                    ● Condiciones de Diseño
+                </a>
+                
+                <div class="step-indicator">
+                    <div class="step-number">2</div>
+                    <span>🌍 Geología Local</span>
+                </div>
+                <a href="#" class="nav-item" data-target="local-geology">
+                    <span class="nav-icon">⛰️</span>
+                    ● Geología Local
+                </a>
+                
+                <div class="step-indicator">
+                    <div class="step-number">3</div>
+                    <span>🏢 Importancia Edificación</span>
+                </div>
+                <a href="#" class="nav-item" data-target="building-importance">
+                    <span class="nav-icon">⭐</span>
+                    ● Importancia de la Edificación
+                </a>
+                
+                <div class="step-indicator">
+                    <div class="step-number">4</div>
+                    <span>🏛️ Configuración Estructural</span>
+                </div>
+                <a href="#" class="nav-item" data-target="structural-config">
+                    <span class="nav-icon">📐</span>
+                    ● Configuración Estructural
+                </a>
+                
+                <div class="step-indicator">
+                    <div class="step-number">5</div>
+                    <span>📉 Factor de Reducción R</span>
+                </div>
+                <a href="#" class="nav-item" data-target="reduction-factor">
+                    <span class="nav-icon">⚡</span>
+                    ● Factor de Reducción R
+                </a>
+                
+                <div class="step-indicator">
+                    <div class="step-number">6</div>
+                    <span>📊 Periodo de Vibración</span>
+                </div>
+                <a href="#" class="nav-item" data-target="vibration-period">
+                    <span class="nav-icon">🔄</span>
+                    ● Periodo de Vibración
+                </a>
+                
+                <div class="step-indicator">
+                    <div class="step-number">7</div>
+                    <span>📈 Resumen de Cálculos</span>
+                </div>
+                <a href="#" class="nav-item" data-target="calculation-summary">
+                    <span class="nav-icon">📋</span>
+                    ● Resumen de Cálculos
+                </a>
+                
+                <div class="step-indicator">
+                    <div class="step-number">8</div>
+                    <span>📊 Espectro de Diseño</span>
+                </div>
+                <a href="#" class="nav-item" data-target="design-spectrum">
+                    <span class="nav-icon">📈</span>
+                    ● Espectro de Diseño
+                </a>
+            </div>
+            
+            <div class="content">
+                <!-- SECCIÓN 0: Información del Proyecto -->
+                <div id="project-info" class="section active">
+                    <h2 class="section-title">
+                        <span class="section-icon">📋</span>
+                        Información del Proyecto
+                    </h2>
+                    
+                    <div class="card">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="project-name">📝 Nombre del Proyecto</label>
+                                <input type="text" id="project-name" value="Proyecto Estructural" placeholder="Ingrese el nombre del proyecto">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="building-height">🏢 Altura del Edificio (hn) - metros</label>
+                                <input type="number" id="building-height" value="11.31" step="0.01" min="0" placeholder="Altura en metros">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="tx-period">📐 TX - Per. Nat. de Vibr. en X (si no se conoce, coloque 1)</label>
+                                <input type="number" id="tx-period" value="1" step="0.01" min="0" placeholder="Período en dirección X">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="ty-period">📐 TY - Per. Nat. de Vibr. en Y (si no se conoce, coloque 1)</label>
+                                <input type="number" id="ty-period" value="1" step="0.01" min="0" placeholder="Período en dirección Y">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="seismic-weight">⚖️ Peso Sísmico (W) - Ton (si no se conoce, coloque 1)</label>
+                                <input type="number" id="seismic-weight" value="2362" step="0.01" min="0" placeholder="Peso sísmico en toneladas">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn" onclick="showSection('design-conditions')">
+                        <span class="btn-icon">➡️</span>
+                        Siguiente
+                    </button>
+                </div>
+
+                <!-- SECCIÓN 1: Condiciones de Diseño -->
+                <div id="design-conditions" class="section">
+                    <h2 class="section-title">
+                        <span class="section-icon">🏗️</span>
+                        Condiciones de Diseño
+                    </h2>
+                    
+                    <div class="card">
+                        <h3>
+                            <span class="card-icon">📍</span>
+                            Zonificación Sísmica
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="seismic-zone">🌍 Zona Sísmica</label>
+                                <select id="seismic-zone" onchange="updateDesignConditions()">
+                                    <option value="I">Zona I</option>
+                                    <option value="II">Zona II</option>
+                                    <option value="III">Zona III</option>
+                                    <option value="IV">Zona IV</option>
+                                    <option value="V" selected>Zona V</option>
+                                    <option value="VI">Zona VI</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="region">🗺️ Región</label>
+                                <select id="region" onchange="updateDesignConditions()">
+                                    <option value="sierra" selected>Sierra, Esmeraldas y Galápagos</option>
+                                    <option value="costa">Costa</option>
+                                    <option value="oriente">Oriente</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="results-grid">
+                            <div class="result-item">
+                                <label>📊 Aceleración de la zona sísmica (Z)</label>
+                                <div class="factor-value" id="z-value">0.4</div>
+                            </div>
+                            <div class="result-item">
+                                <label>⚠️ Caracterización del peligro sísmico</label>
+                                <div class="factor-value" id="risk-characterization">Alta</div>
+                            </div>
+                            <div class="result-item">
+                                <label>📈 Relación de amplificación espectral (η)</label>
+                                <div class="factor-value" id="eta-value">2.48</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button class="btn" onclick="showSection('project-info')">
+                            <span class="btn-icon">⬅️</span>
+                            Anterior
+                        </button>
+                        <button class="btn" onclick="showSection('local-geology')">
+                            <span class="btn-icon">➡️</span>
+                            Siguiente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: Geología Local -->
+                <div id="local-geology" class="section">
+                    <h2 class="section-title">
+                        <span class="section-icon">🌍</span>
+                        Geología Local
+                    </h2>
+                    
+                    <div class="card">
+                        <h3>
+                            <span class="card-icon">⛰️</span>
+                            Tipo de Perfil de Suelo
+                        </h3>
+                        <div class="form-group">
+                            <label for="soil-type">🏔️ Seleccione el tipo de perfil:</label>
+                            <select id="soil-type" onchange="updateSoilProfile()">
+                                <option value="A">A - Perfil de roca competente</option>
+                                <option value="B">B - Perfil de roca de rigidez media</option>
+                                <option value="C">C - Perfiles de suelos muy densos o roca blanda</option>
+                                <option value="D" selected>D - Perfiles de suelos rígidos</option>
+                                <option value="E">E - Perfil de suelos blandos</option>
+                                <option value="F">F - Suelos especiales</option>
+                            </select>
+                        </div>
+                        
+                        <div class="info-box">
+                            <strong>📖 Descripción:</strong> <span id="soil-description">Perfiles de suelos rígidos que cumplan con el criterio de velocidad de la onda de cortante, o Perfiles de suelos rígidos que cumplan cualquiera de las dos condiciones</span>
+                            <br><br>
+                            <strong>📐 Definición:</strong> <span id="soil-definition">360 m/s > Vs ≥ 180 m/s - 50 > N ≥ 15.0 - 100 kPa > Su ≥ 50 kPa</span>
+                        </div>
+                        
+                        <div class="soil-f-custom" id="soil-f-custom">
+                            <div class="form-group">
+                                <label for="fa-custom">Fa</label>
+                                <input type="number" id="fa-custom" value="1.0" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="fd-custom">Fd</label>
+                                <input type="number" id="fd-custom" value="1.0" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="fs-custom">Fs</label>
+                                <input type="number" id="fs-custom" value="1.0" step="0.01" min="0">
+                            </div>
+                        </div>
+                        
+                        <div class="factors-grid">
+                            <div class="factor-item">
+                                <label>Fa</label>
+                                <div class="factor-value" id="fa-value">1.2</div>
+                                <small>Factor de amplificación</small>
+                            </div>
+                            <div class="factor-item">
+                                <label>Fd</label>
+                                <div class="factor-value" id="fd-value">1.19</div>
+                                <small>Factor de desplazamiento</small>
+                            </div>
+                            <div class="factor-item">
+                                <label>Fs</label>
+                                <div class="factor-value" id="fs-value">1.28</div>
+                                <small>Factor inelástico</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button class="btn" onclick="showSection('design-conditions')">
+                            <span class="btn-icon">⬅️</span>
+                            Anterior
+                        </button>
+                        <button class="btn" onclick="showSection('building-importance')">
+                            <span class="btn-icon">➡️</span>
+                            Siguiente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: Importancia de la Edificación -->
+                <div id="building-importance" class="section">
+                    <h2 class="section-title">
+                        <span class="section-icon">🏢</span>
+                        Importancia de la Edificación
+                    </h2>
+                    
+                    <div class="card">
+                        <h3>
+                            <span class="card-icon">⭐</span>
+                            Factor de Importancia (I)
+                        </h3>
+                        <div class="table-container">
+                            <table class="radio-table">
+                                <thead>
+                                    <tr>
+                                        <th width="5%"></th>
+                                        <th width="30%">Categoría</th>
+                                        <th width="55%">Tipo de uso, destino e importancia</th>
+                                        <th width="10%">Coeficiente I</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr onclick="selectRow(this, 'importance')">
+                                        <td><input type="radio" name="importance" value="1.5"></td>
+                                        <td>Edificaciones esenciales</td>
+                                        <td>Hospitales, clínicas, Centros de salud o de emergencia sanitaria. Instalaciones militares, de policía, bomberos, defensa civil.</td>
+                                        <td>1.5</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'importance')">
+                                        <td><input type="radio" name="importance" value="1.3"></td>
+                                        <td>Estructuras de ocupación especial</td>
+                                        <td>Museos, iglesias, escuelas y centros de educación o deportivos que albergan más de trescientas personas.</td>
+                                        <td>1.3</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'importance')" class="selected">
+                                        <td><input type="radio" name="importance" value="1.0" checked></td>
+                                        <td>Otras estructuras</td>
+                                        <td>Todas las estructuras de edificación y otras que no clasifican dentro de las categorías anteriores</td>
+                                        <td>1.0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="result-item highlight" style="margin-top: 15px;">
+                            <label>Factor de Importancia Seleccionado (I)</label>
+                            <div class="factor-value" id="i-value">1.0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button class="btn" onclick="showSection('local-geology')">
+                            <span class="btn-icon">⬅️</span>
+                            Anterior
+                        </button>
+                        <button class="btn" onclick="showSection('structural-config')">
+                            <span class="btn-icon">➡️</span>
+                            Siguiente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 4: Configuración Estructural -->
+                <div id="structural-config" class="section">
+                    <h2 class="section-title">
+                        <span class="section-icon">🏛️</span>
+                        Configuración Estructural
+                    </h2>
+                    
+                    <div class="card">
+                        <h3 class="subsection-title">
+                            <span class="subsection-icon">📐</span>
+                            Irregularidad Torsional en Planta
+                        </h3>
+                        <div class="table-container">
+                            <table class="radio-table">
+                                <thead>
+                                    <tr>
+                                        <th width="5%"></th>
+                                        <th width="25%">Irregularidad</th>
+                                        <th width="60%">Descripción</th>
+                                        <th width="10%">Øp</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr onclick="selectRow(this, 'phi-p')" class="selected">
+                                        <td><input type="radio" name="phi-p" value="1.0" checked></td>
+                                        <td>Regularidad en Planta</td>
+                                        <td>La configuración en planta ideal en un sistema estructural es cuando el Centro de Rigidez es semejante al Centro de Masa.</td>
+                                        <td>1.0</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'phi-p')">
+                                        <td><input type="radio" name="phi-p" value="0.9"></td>
+                                        <td>Irregularidad Torsional</td>
+                                        <td>Existe irregularidad por torsión cuando la máxima deriva de piso de un extremo de la estructura calculada incluyendo la torsión accidental es mayor que 1,2 veces la deriva promedio.</td>
+                                        <td>0.9</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'phi-p')">
+                                        <td><input type="radio" name="phi-p" value="0.9"></td>
+                                        <td>Retrocesos excesivos</td>
+                                        <td>La configuración se considera irregular cuando presenta entrantes excesivos en sus esquinas.</td>
+                                        <td>0.9</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'phi-p')">
+                                        <td><input type="radio" name="phi-p" value="0.9"></td>
+                                        <td>Discontinuidades en el sistema de piso</td>
+                                        <td>La configuración de la estructura se considera irregular cuando el sistema de piso tiene discontinuidades apreciables o variaciones significativas en su rigidez.</td>
+                                        <td>0.9</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'phi-p')">
+                                        <td><input type="radio" name="phi-p" value="0.9"></td>
+                                        <td>Ejes estructurales no paralelos</td>
+                                        <td>La estructura se considera irregular cuando los ejes estructurales no son paralelos o simétricos con respecto a los ejes ortogonales principales de la estructura.</td>
+                                        <td>0.9</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <h3 class="subsection-title">
+                            <span class="subsection-icon">📏</span>
+                            Irregularidad en Elevación
+                        </h3>
+                        <div class="table-container">
+                            <table class="radio-table">
+                                <thead>
+                                    <tr>
+                                        <th width="5%"></th>
+                                        <th width="25%">Irregularidad</th>
+                                        <th width="60%">Descripción</th>
+                                        <th width="10%">Øe</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr onclick="selectRow(this, 'phi-e')" class="selected">
+                                        <td><input type="radio" name="phi-e" value="1.0" checked></td>
+                                        <td>Regularidad en Elevación</td>
+                                        <td>La altura de entrepiso y la configuración vertical de sistemas aporticados, es constante en todos los niveles.</td>
+                                        <td>1.0</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'phi-e')">
+                                        <td><input type="radio" name="phi-e" value="0.9"></td>
+                                        <td>Piso Flexible</td>
+                                        <td>La estructura se considera irregular cuando la rigidez lateral de un piso es menor que el 70% de la rigidez lateral del piso superior.</td>
+                                        <td>0.9</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'phi-e')">
+                                        <td><input type="radio" name="phi-e" value="0.9"></td>
+                                        <td>Distribución de Masa</td>
+                                        <td>La estructura se considera irregular cuando la masa de cualquier piso es mayor que 1,5 veces la masa de uno de los pisos adyacentes.</td>
+                                        <td>0.9</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'phi-e')">
+                                        <td><input type="radio" name="phi-e" value="0.9"></td>
+                                        <td>Irregularidad Geométrica</td>
+                                        <td>La estructura se considera irregular cuando la dimensión en planta del sistema resistente en cualquier piso es mayor que 1,3 veces la misma dimensión en un piso adyacente.</td>
+                                        <td>0.9</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="results-grid" style="margin-top: 15px;">
+                            <div class="result-item">
+                                <label>Factor Øp</label>
+                                <div class="factor-value" id="phi-p-value">1.0</div>
+                            </div>
+                            <div class="result-item">
+                                <label>Factor Øe</label>
+                                <div class="factor-value" id="phi-e-value">1.0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button class="btn" onclick="showSection('building-importance')">
+                            <span class="btn-icon">⬅️</span>
+                            Anterior
+                        </button>
+                        <button class="btn" onclick="showSection('reduction-factor')">
+                            <span class="btn-icon">➡️</span>
+                            Siguiente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 5: Factor de Reducción R -->
+                <div id="reduction-factor" class="section">
+                    <h2 class="section-title">
+                        <span class="section-icon">📉</span>
+                        Factor de Reducción de Resistencia Sísmica R
+                    </h2>
+                    
+                    <div class="card">
+                        <h3 class="subsection-title">
+                            <span class="subsection-icon">⚡</span>
+                            SISTEMAS ESTRUCTURALES DÚCTILES
+                        </h3>
+                        <div class="table-container">
+                            <table class="radio-table">
+                                <thead>
+                                    <tr>
+                                        <th width="5%"></th>
+                                        <th width="75%">Tipo de Sistema Estructural</th>
+                                        <th width="20%">Factor R</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr onclick="selectRow(this, 'reduction-ductile')" class="selected">
+                                        <td><input type="radio" name="reduction-ductile" value="8" checked></td>
+                                        <td>Pórticos especiales sismo resistentes, de hormigón armado con vigas descolgadas y con muros estructurales de hormigón armado o con diagonales rigidizadoras (sistemas duales).</td>
+                                        <td>8</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-ductile')">
+                                        <td><input type="radio" name="reduction-ductile" value="8"></td>
+                                        <td>Pórticos especiales sismo resistentes de acero laminado en caliente, sea con diagonales rigidizadoras (excéntricas o concéntricas) o con muros estructurales de hormigón armado.</td>
+                                        <td>8</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-ductile')">
+                                        <td><input type="radio" name="reduction-ductile" value="8"></td>
+                                        <td>Pórticos con columnas de hormigón armado y vigas de acero laminado en caliente con diagonales rigidizadoras (excéntricas o concéntricas).</td>
+                                        <td>8</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-ductile')">
+                                        <td><input type="radio" name="reduction-ductile" value="7"></td>
+                                        <td>Pórticos especiales sismo resistentes, de hormigón armado con vigas banda, con muros estructurales de hormigón armado o con diagonales rigidizadoras.</td>
+                                        <td>7</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-ductile')">
+                                        <td><input type="radio" name="reduction-ductile" value="8"></td>
+                                        <td>Pórticos especiales sismo resistentes, de hormigón armado con vigas descolgadas.</td>
+                                        <td>8</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-ductile')">
+                                        <td><input type="radio" name="reduction-ductile" value="8"></td>
+                                        <td>Pórticos especiales sismo resistentes, de acero laminado en caliente o con elementos armados de placas.</td>
+                                        <td>8</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-ductile')">
+                                        <td><input type="radio" name="reduction-ductile" value="8"></td>
+                                        <td>Pórticos con columnas de hormigón armado y vigas de acero laminado en caliente.</td>
+                                        <td>8</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-ductile')">
+                                        <td><input type="radio" name="reduction-ductile" value="5"></td>
+                                        <td>Sistemas de muros estructurales dúctiles de hormigón armado.</td>
+                                        <td>5</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-ductile')">
+                                        <td><input type="radio" name="reduction-ductile" value="5"></td>
+                                        <td>Pórticos especiales sismo resistentes de hormigón armado con vigas banda.</td>
+                                        <td>5</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <h3 class="subsection-title">
+                            <span class="subsection-icon">📏</span>
+                            SISTEMAS ESTRUCTURALES DE DUCTILIDAD LIMITADA
+                        </h3>
+                        <div class="table-container">
+                            <table class="radio-table">
+                                <thead>
+                                    <tr>
+                                        <th width="5%"></th>
+                                        <th width="75%">Tipo de Sistema Estructural</th>
+                                        <th width="20%">Factor R</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr onclick="selectRow(this, 'reduction-limited')">
+                                        <td><input type="radio" name="reduction-limited" value="3"></td>
+                                        <td>Hormigón Armado con secciones de dimensión menor a la especificada en la NEC-SE-HM, limitados a viviendas de hasta 2 pisos con luces de hasta 5 metros.</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-limited')">
+                                        <td><input type="radio" name="reduction-limited" value="3"></td>
+                                        <td>Hormigón Armado con secciones de dimensión menor a la especificada en la NEC-SE-HM con armadura electrosoldada de alta resistencia.</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-limited')">
+                                        <td><input type="radio" name="reduction-limited" value="2.5"></td>
+                                        <td>Estructuras de acero conformado en frío, aluminio, madera, limitados a 2 pisos.</td>
+                                        <td>2.5</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-limited')">
+                                        <td><input type="radio" name="reduction-limited" value="1"></td>
+                                        <td>Mampostería no reforzada, limitada a un piso.</td>
+                                        <td>1</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-limited')">
+                                        <td><input type="radio" name="reduction-limited" value="3"></td>
+                                        <td>Mampostería reforzada, limitada a 2 pisos.</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-limited')">
+                                        <td><input type="radio" name="reduction-limited" value="3"></td>
+                                        <td>Mampostería confinada, limitada a 2 pisos.</td>
+                                        <td>3</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'reduction-limited')">
+                                        <td><input type="radio" name="reduction-limited" value="3"></td>
+                                        <td>Muros de hormigón armado, limitados a 4 pisos.</td>
+                                        <td>3</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="result-item highlight" style="margin-top: 15px;">
+                            <label>Factor de Reducción Seleccionado (R)</label>
+                            <div class="factor-value" id="r-value">8</div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button class="btn" onclick="showSection('structural-config')">
+                            <span class="btn-icon">⬅️</span>
+                            Anterior
+                        </button>
+                        <button class="btn" onclick="showSection('vibration-period')">
+                            <span class="btn-icon">➡️</span>
+                            Siguiente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 6: Periodo de Vibración -->
+                <div id="vibration-period" class="section">
+                    <h2 class="section-title">
+                        <span class="section-icon">📊</span>
+                        Periodo de Vibración (Método DBF)
+                    </h2>
+                    
+                    <div class="card">
+                        <h3 class="subsection-title">
+                            <span class="subsection-icon">🔄</span>
+                            Tipo de Estructura
+                        </h3>
+                        <div class="table-container">
+                            <table class="radio-table">
+                                <thead>
+                                    <tr>
+                                        <th width="5%"></th>
+                                        <th width="70%">Tipo de estructura</th>
+                                        <th width="12.5%">Ct</th>
+                                        <th width="12.5%">α</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr onclick="selectRow(this, 'structural-type')" class="selected">
+                                        <td><input type="radio" name="structural-type" value="hormigon_sin_muros" checked></td>
+                                        <td>Pórticos especiales de hormigón armado sin muros estructurales ni diagonales rigidizadoras</td>
+                                        <td>0.055</td>
+                                        <td>0.9</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'structural-type')">
+                                        <td><input type="radio" name="structural-type" value="hormigon_con_muros"></td>
+                                        <td>Pórticos especiales de hormigón armado con muros estructurales o diagonales rigidizadoras y para otras estructuras basadas en muros estructurales y mampostería estructural</td>
+                                        <td>0.055</td>
+                                        <td>0.75</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'structural-type')">
+                                        <td><input type="radio" name="structural-type" value="acero_sin_arriostramientos"></td>
+                                        <td>Estructuras de acero sin arriostramientos</td>
+                                        <td>0.072</td>
+                                        <td>0.8</td>
+                                    </tr>
+                                    <tr onclick="selectRow(this, 'structural-type')">
+                                        <td><input type="radio" name="structural-type" value="acero_con_arriostramientos"></td>
+                                        <td>Estructuras de acero con arriostramientos</td>
+                                        <td>0.073</td>
+                                        <td>0.75</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="results-grid" style="margin-top: 15px;">
+                            <div class="result-item">
+                                <label>Ct</label>
+                                <div class="factor-value" id="ct-value">0.055</div>
+                            </div>
+                            <div class="result-item">
+                                <label>α</label>
+                                <div class="factor-value" id="alpha-value">0.9</div>
+                            </div>
+                            <div class="result-item highlight">
+                                <label>Periodo Fundamental T (s)</label>
+                                <div class="factor-value" id="t-value">0.47</div>
+                            </div>
+                        </div>
+                        
+                        <div class="calculation-steps">
+                            <h4>Fórmula Aplicada:</h4>
+                            <div class="formula-box">T = Ct × hn^α = <span id="ct-formula">0.055</span> × <span id="hn-formula">11.31</span>^<span id="alpha-formula">0.9</span> = <span id="t-result">0.47</span> s</div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button class="btn" onclick="showSection('reduction-factor')">
+                            <span class="btn-icon">⬅️</span>
+                            Anterior
+                        </button>
+                        <button class="btn" onclick="showSection('calculation-summary')">
+                            <span class="btn-icon">➡️</span>
+                            Siguiente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 7: Resumen de Cálculos -->
+                <div id="calculation-summary" class="section">
+                    <h2 class="section-title">
+                        <span class="section-icon">📈</span>
+                        Resumen de Cálculos
+                    </h2>
+                    
+                    <div class="card">
+                        <h3>
+                            <span class="card-icon">📋</span>
+                            Parámetros de Diseño Sísmico
+                        </h3>
+                        <table class="summary-table">
+                            <thead>
+                                <tr>
+                                    <th width="30%">Cálculos</th>
+                                    <th width="50%">Descripción</th>
+                                    <th width="20%">Unidad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>hn</td>
+                                    <td>Altura total del elemento</td>
+                                    <td>m</td>
+                                </tr>
+                                <tr>
+                                    <td>Zona Sísmica</td>
+                                    <td id="summary-zone">V</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>Región</td>
+                                    <td id="summary-region">Sierra, Esmeraldas y Galápagos</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>Tipo de Suelo</td>
+                                    <td id="summary-soil">D - Perfiles de suelos rígidos</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>Z</td>
+                                    <td>Aceleración de la zona sísmica</td>
+                                    <td id="summary-z">0.4</td>
+                                </tr>
+                                <tr>
+                                    <td>Caracterización del Peligro Sísmico</td>
+                                    <td id="summary-risk">Alta</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>η</td>
+                                    <td>Relación de ampl. espectral</td>
+                                    <td id="summary-eta">2.48</td>
+                                </tr>
+                                <tr>
+                                    <td>Fa</td>
+                                    <td>Factor de amplificación de sitio</td>
+                                    <td id="summary-fa">1.2</td>
+                                </tr>
+                                <tr>
+                                    <td>Fd</td>
+                                    <td>Fact. de ampl. de desplazamiento</td>
+                                    <td id="summary-fd">1.19</td>
+                                </tr>
+                                <tr>
+                                    <td>Fs</td>
+                                    <td>Fact. de comport. inelástico suelo</td>
+                                    <td id="summary-fs">1.28</td>
+                                </tr>
+                                <tr>
+                                    <td>To = 0.1 × Fd × Fs / Fa</td>
+                                    <td>Periodo Límite en T=To</td>
+                                    <td id="summary-to">0.13 s</td>
+                                </tr>
+                                <tr>
+                                    <td>Tc = 0.55 × Fd × Fs / Fa</td>
+                                    <td>Periodo Límite en T=Tc</td>
+                                    <td id="summary-tc">0.70 s</td>
+                                </tr>
+                                <tr>
+                                    <td>Tl = 2.4 × Fd</td>
+                                    <td>Per. lim. vibr. Espec. Resp.</td>
+                                    <td id="summary-tl">2.86 s</td>
+                                </tr>
+                                <tr>
+                                    <td>Sa = Z × Fa</td>
+                                    <td>Aceleración en T=0</td>
+                                    <td id="summary-sa0">0.48 g</td>
+                                </tr>
+                                <tr>
+                                    <td>Sa To-Tc = Z × η × Fa</td>
+                                    <td>Aceleración en T=To</td>
+                                    <td id="summary-sa-plateau">1.19 g</td>
+                                </tr>
+                                <tr>
+                                    <td>Configuración Geométrica</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>I</td>
+                                    <td>Factor de Importancia</td>
+                                    <td id="summary-i">1.0</td>
+                                </tr>
+                                <tr>
+                                    <td>Øp</td>
+                                    <td>Irregularidad en planta</td>
+                                    <td id="summary-phip">1.0</td>
+                                </tr>
+                                <tr>
+                                    <td>ØE</td>
+                                    <td>Irregularidad en elevación</td>
+                                    <td id="summary-phie">1.0</td>
+                                </tr>
+                                <tr>
+                                    <td>R</td>
+                                    <td>Factor de Reducción</td>
+                                    <td id="summary-r">8</td>
+                                </tr>
+                                <tr>
+                                    <td>Caract. Método DBF</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>Ct</td>
+                                    <td>Coe. Edific.</td>
+                                    <td id="summary-ct">0.055</td>
+                                </tr>
+                                <tr>
+                                    <td>α</td>
+                                    <td>Impedancia del semiespacio</td>
+                                    <td id="summary-alpha">0.9</td>
+                                </tr>
+                                <tr>
+                                    <td>T = Ct × hn^α</td>
+                                    <td>Periodo Fundamental</td>
+                                    <td id="summary-t">0.47 s</td>
+                                </tr>
+                                <tr>
+                                    <td>f = 1 / (R × Øp × Øe)</td>
+                                    <td>% de reducción de espectro</td>
+                                    <td id="summary-f">0.125</td>
+                                </tr>
+                                <tr>
+                                    <td>V = (I × Sa × W) / (R × Øp × Øe)</td>
+                                    <td>Cortante Basal</td>
+                                    <td id="summary-v">351.3 Ton</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button class="btn" onclick="showSection('vibration-period')">
+                            <span class="btn-icon">⬅️</span>
+                            Anterior
+                        </button>
+                        <button class="btn" onclick="calculateSpectrum(); showSection('design-spectrum')">
+                            <span class="btn-icon">➡️</span>
+                            Calcular Espectro
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 8: Espectro de Diseño -->
+                <div id="design-spectrum" class="section">
+                    <h2 class="section-title">
+                        <span class="section-icon">📊</span>
+                        Espectro de Diseño
+                    </h2>
+                    
+<div class="card">
+    <h3>
+        <span class="card-icon">🎨</span>
+        Personalización del Gráfico
+    </h3>
+    <div class="color-picker">
+        <div class="color-option">
+            <label>Espectro Elástico:</label>
+            <input type="color" id="elastic-color" value="#e74c3c" onchange="updateChartColors()">
+            <div class="color-preview" id="elastic-preview" style="background-color: #e74c3c"></div>
+        </div>
+        <div class="color-option">
+            <label>Espectro Reducido:</label>
+            <input type="color" id="reduced-color" value="#3498db" onchange="updateChartColors()">
+            <div class="color-preview" id="reduced-preview" style="background-color: #3498db"></div>
+        </div>
+        <div class="color-option">
+            <label>Tamaño de puntos:</label>
+            <input type="range" id="point-size" min="0" max="6" value="3" step="0.5" onchange="updatePointSize()">
+            <span id="point-size-value">0</span>
+            <div class="option-description">0 = sin puntos, 6 = puntos grandes</div>
+        </div>
+    </div>
+    
+    <div class="zoom-controls">
+        <label>🔍 Control de Zoom:</label>
+        <button class="zoom-btn" onclick="zoomOut()">-</button>
+        <button class="zoom-btn" onclick="resetZoom()">⟲</button>
+        <button class="zoom-btn" onclick="zoomIn()">+</button>
+    </div>
+</div>
+                    
+                    <div class="card">
+                        <h3>
+                            <span class="card-icon">📈</span>
+                            Gráfico del Espectro de Diseño
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="spectrumChart"></canvas>
+                        </div>
+                        
+                        <div class="export-buttons">
+                            <button class="btn btn-success" onclick="exportChartToPDF()">
+                                <span class="btn-icon">📥</span>
+                                Exportar Gráfico a PDF
+                            </button>
+                            <button class="btn btn-warning" onclick="exportChartToImage()">
+                                <span class="btn-icon">🖼️</span>
+                                Exportar Gráfico como Imagen
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>
+                            <span class="card-icon">📋</span>
+                            Tabla de Datos del Espectro
+                        </h3>
+                        <div id="spectrum-table-container">
+                            <!-- La tabla se generará aquí -->
+                        </div>
+                        
+                        <div class="export-buttons">
+                            <button class="btn btn-success" onclick="exportTableToPDF()">
+                                <span class="btn-icon">📥</span>
+                                Exportar Tabla a PDF
+                            </button>
+                            <button class="btn btn-warning" onclick="exportTableToExcel()">
+                                <span class="btn-icon">📊</span>
+                                Exportar Tabla a Excel
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>
+                            <span class="card-icon">📄</span>
+                            Exportar Informe Completo
+                        </h3>
+                        <div class="info-box">
+                            📝 El informe completo incluirá todos los detalles de los cálculos, interpretación del diseño sísmico, 
+                            recomendaciones específicas según el sitio, zona sísmica y características de aceleración.
+                        </div>
+                        
+                        <div class="export-buttons">
+                            <button class="btn btn-accent" onclick="previewReport()">
+                                <span class="btn-icon">👁️</span>
+                                Vista Previa del Informe
+                            </button>
+                            <button class="btn btn-success" onclick="exportFullReport()">
+                                <span class="btn-icon">📥</span>
+                                Exportar Informe Completo PDF
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="export-buttons">
+                        <button class="btn" onclick="showSection('calculation-summary')">
+                            <span class="btn-icon">⬅️</span>
+                            Anterior
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para previsualizar el informe -->
+    <div class="preview-modal" id="previewModal">
+        <div class="preview-content">
+            <div class="preview-header">
+                <h2>📄 Vista Previa del Informe</h2>
+                <button class="close-btn" onclick="closePreview()">×</button>
+            </div>
+            <div id="previewContent">
+                <!-- El contenido del informe se cargará aquí -->
+            </div>
+            <div class="export-buttons" style="margin-top: 20px;">
+                <button class="btn btn-success" onclick="exportFullReport()">
+                    <span class="btn-icon">📥</span>
+                    Exportar a PDF
+                </button>
+                <button class="btn" onclick="closePreview()">
+                    <span class="btn-icon">❌</span>
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DATOS COMPLETOS NEC-15
+        const NEC_TABLES = {
+            ZONE_FACTORS: {
+                'I': { Z: 0.15, risk: 'Intermedia' },
+                'II': { Z: 0.25, risk: 'Alta' },
+                'III': { Z: 0.3, risk: 'Alta' },
+                'IV': { Z: 0.35, risk: 'Alta' },
+                'V': { Z: 0.4, risk: 'Alta' },
+                'VI': { Z: 0.5, risk: 'Muy Alta' }
+            },
+            
+            ETA_FACTORS: {
+                'sierra': 2.48, 
+                'costa': 1.8, 
+                'oriente': 2.6
+            },
+            
+            SOIL_PROFILES: {
+                'A': {
+                    description: 'Perfil de roca competente',
+                    definition: 'Vs ≥ 1500 m/s',
+                    factors: { 
+                        'I': { Fa: 0.9, Fd: 0.9, Fs: 0.75 },
+                        'II': { Fa: 0.9, Fd: 0.9, Fs: 0.75 },
+                        'III': { Fa: 0.9, Fd: 0.9, Fs: 0.75 },
+                        'IV': { Fa: 0.9, Fd: 0.9, Fs: 0.75 },
+                        'V': { Fa: 0.9, Fd: 0.9, Fs: 0.75 },
+                        'VI': { Fa: 0.9, Fd: 0.9, Fs: 0.75 }
+                    }
+                },
+                'B': {
+                    description: 'Perfil de roca de rigidez media',
+                    definition: '1500 m/s > Vs ≥ 760 m/s',
+                    factors: { 
+                        'I': { Fa: 1.0, Fd: 1.0, Fs: 0.75 },
+                        'II': { Fa: 1.0, Fd: 1.0, Fs: 0.75 },
+                        'III': { Fa: 1.0, Fd: 1.0, Fs: 0.75 },
+                        'IV': { Fa: 1.0, Fd: 1.0, Fs: 0.75 },
+                        'V': { Fa: 1.0, Fd: 1.0, Fs: 0.75 },
+                        'VI': { Fa: 1.0, Fd: 1.0, Fs: 0.75 }
+                    }
+                },
+                'C': {
+                    description: 'Perfiles de suelos muy densos o roca blanda',
+                    definition: '760 m/s > Vs ≥ 360 m/s - N ≥ 50.0 - Su ≥ 100 kPa',
+                    factors: { 
+                        'I': { Fa: 1.4, Fd: 1.36, Fs: 0.85 },
+                        'II': { Fa: 1.3, Fd: 1.28, Fs: 0.94 },
+                        'III': { Fa: 1.25, Fd: 1.19, Fs: 1.02 },
+                        'IV': { Fa: 1.23, Fd: 1.15, Fs: 1.06 },
+                        'V': { Fa: 1.2, Fd: 1.11, Fs: 1.11 },
+                        'VI': { Fa: 1.18, Fd: 1.06, Fs: 1.23 }
+                    }
+                },
+                'D': {
+                    description: 'Perfiles de suelos rígidos',
+                    definition: '360 m/s > Vs ≥ 180 m/s - 50 > N ≥ 15.0 - 100 kPa > Su ≥ 50 kPa',
+                    factors: { 
+                        'I': { Fa: 1.6, Fd: 1.62, Fs: 1.02 },
+                        'II': { Fa: 1.4, Fd: 1.45, Fs: 1.06 },
+                        'III': { Fa: 1.3, Fd: 1.36, Fs: 1.11 },
+                        'IV': { Fa: 1.25, Fd: 1.28, Fs: 1.19 },
+                        'V': { Fa: 1.2, Fd: 1.19, Fs: 1.28 },
+                        'VI': { Fa: 1.12, Fd: 1.11, Fs: 1.4 }
+                    }
+                },
+                'E': {
+                    description: 'Perfil de suelos blandos',
+                    definition: 'Vs < 180 m/s - IP > 20 - w ≥ 40% - Su < 50 kPa',
+                    factors: { 
+                        'I': { Fa: 1.8, Fd: 2.1, Fs: 1.5 },
+                        'II': { Fa: 1.4, Fd: 1.75, Fs: 1.6 },
+                        'III': { Fa: 1.25, Fd: 1.7, Fs: 1.7 },
+                        'IV': { Fa: 1.1, Fd: 1.65, Fs: 1.8 },
+                        'V': { Fa: 1.0, Fd: 1.6, Fs: 1.9 },
+                        'VI': { Fa: 0.85, Fd: 1.5, Fs: 2.0 }
+                    }
+                },
+                'F': {
+                    description: 'Los perfiles de suelo tipo F requieren una evaluación realizada explícitamente en el sitio por un ingeniero geotecnista',
+                    definition: 'De acuerdo al estudio geotécnico',
+                    factors: { 
+                        'I': { Fa: 1.0, Fd: 1.0, Fs: 1.0 },
+                        'II': { Fa: 1.0, Fd: 1.0, Fs: 1.0 },
+                        'III': { Fa: 1.0, Fd: 1.0, Fs: 1.0 },
+                        'IV': { Fa: 1.0, Fd: 1.0, Fs: 1.0 },
+                        'V': { Fa: 1.0, Fd: 1.0, Fs: 1.0 },
+                        'VI': { Fa: 1.0, Fd: 1.0, Fs: 1.0 }
+                    }
+                }
+            },
+            
+            STRUCTURAL_COEFFICIENTS: {
+                'hormigon_sin_muros': { Ct: 0.055, alpha: 0.9 },
+                'hormigon_con_muros': { Ct: 0.055, alpha: 0.75 },
+                'acero_sin_arriostramientos': { Ct: 0.072, alpha: 0.8 },
+                'acero_con_arriostramientos': { Ct: 0.073, alpha: 0.75 }
+            }
+        };
+
+        // VARIABLES GLOBALES
+        let spectrumChartInstance = null;
+        let currentZoom = 1;
+        const spectrumData = {
+            periods: [],
+            elastic: [],
+            reduced: []
+        };
+
+        // FUNCIONES DE NAVEGACIÓN
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('data-target') === sectionId) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // En dispositivos móviles, ocultar el sidebar después de seleccionar
+            if (window.innerWidth <= 1024) {
+                document.getElementById('sidebar').classList.add('hidden');
+            }
+            
+            if (sectionId === 'design-spectrum') {
+                showSpectrumTable();
+            } else if (sectionId === 'calculation-summary') {
+                updateSummaryTable();
+            }
+        }
+
+        // Menú móvil
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        });
+
+        // Cerrar preview modal
+        function closePreview() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+
+        // Función para previsualizar el informe
+        function previewReport() {
+            // Generar contenido del informe
+            const previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = generateReportContent();
+            
+            // Mostrar modal
+            document.getElementById('previewModal').style.display = 'flex';
+        }
+
+        // Función para generar el contenido del informe
+        function generateReportContent() {
+            return `
+                <div class="report-content">
+                    <h3>📄 Informe caracterízación sísmica - NEC-15</h3>
+                    <div class="info-box">
+                        <h4>📋 Información del Proyecto</h4>
+                        <p><strong>Nombre:</strong> ${document.getElementById('project-name').value}</p>
+                        <p><strong>Altura del edificio:</strong> ${document.getElementById('building-height').value} m</p>
+                        <p><strong>Peso sísmico:</strong> ${document.getElementById('seismic-weight').value} Ton</p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h4>🏗️ Condiciones de Diseño</h4>
+                        <p><strong>Zona Sísmica:</strong> ${document.getElementById('seismic-zone').value}</p>
+                        <p><strong>Aceleración de la zona (Z):</strong> ${document.getElementById('z-value').textContent} g</p>                        
+			<p><strong>Riesgo de la zona (Z):</strong> ${document.getElementById('risk-characterization').textContent}</p>
+                        <p><strong>Región:</strong> ${document.getElementById('region').options[document.getElementById('region').selectedIndex].text}</p>
+                        <p><strong>Relación de ampl. espectral (η):</strong> ${document.getElementById('eta-value').textContent}</p>
+                    </div> 
+
+                    <div class="info-box">
+                        <h4>🌍 Geología local</h4>
+                        <p><strong>Tipo de suelo:</strong> ${document.getElementById('soil-type').options[document.getElementById('soil-type').selectedIndex].text}</p>
+                        <p><strong>Factor de amplificación de sitio (Fa):</strong> ${document.getElementById('fa-value').textContent}</p>
+                        <p><strong>Fact. de ampl. de desplazamiento (Fd):</strong> ${document.getElementById('fd-value').textContent}</p>
+                        <p><strong>Fact. de comport. inelástico suelo (Fs):</strong> ${document.getElementById('fs-value').textContent}</p>
+                    </div> 
+
+                   <div class="info-box">
+                        <h4>🏢 Configuración estructural</h4>
+                        <p><strong>Factor de Importancia (I):</strong> ${document.getElementById('i-value').textContent}</p>
+                        <p><strong>Irregularidad en planta (Øp):</strong> ${document.getElementById('phi-p-value').textContent} </p>
+                        <p><strong>Irregularidad en elevación (Øe):</strong> ${document.getElementById('phi-e-value').textContent} </p>
+                        <p><strong>Factor de Reducción (R) :</strong> ${document.getElementById('r-value').textContent} </p>
+                    </div>
+                
+                    <!-- Más contenido del informe -->
+                    <div style="margin-top: 20px;">
+                        <p><strong>📊 Recomendaciones:</strong> ${getDesignRecommendation()}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Control de zoom para el gráfico
+        function zoomIn() {
+            if (currentZoom < 2) {
+                currentZoom += 0.1;
+                updateChartZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > 0.5) {
+                currentZoom -= 0.1;
+                updateChartZoom();
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            updateChartZoom();
+        }
+
+        function updateChartZoom() {
+            if (spectrumChartInstance) {
+                spectrumChartInstance.options.scales.x.zoom = currentZoom;
+                spectrumChartInstance.options.scales.y.zoom = currentZoom;
+                spectrumChartInstance.update();
+            }
+        }
+
+        // SELECCIÓN DE FILAS EN TABLAS
+        function selectRow(row, type) {
+            const table = row.closest('table');
+            table.querySelectorAll('tr').forEach(r => r.classList.remove('selected'));
+            row.classList.add('selected');
+            
+            const radio = row.querySelector('input[type="radio"]');
+            radio.checked = true;
+            
+            if (type === 'importance') {
+                document.getElementById('i-value').textContent = radio.value;
+            } else if (type === 'phi-p') {
+                document.getElementById('phi-p-value').textContent = radio.value;
+            } else if (type === 'phi-e') {
+                document.getElementById('phi-e-value').textContent = radio.value;
+            } else if (type === 'reduction-ductile' || type === 'reduction-limited') {
+                document.getElementById('r-value').textContent = radio.value;
+            } else if (type === 'structural-type') {
+                const coefficients = NEC_TABLES.STRUCTURAL_COEFFICIENTS[radio.value];
+                document.getElementById('ct-value').textContent = coefficients.Ct;
+                document.getElementById('alpha-value').textContent = coefficients.alpha;
+                calculatePeriods();
+            }
+            
+            calculateAll();
+        }
+
+        // ACTUALIZAR CONDICIONES DE DISEÑO
+        function updateDesignConditions() {
+            const zone = document.getElementById('seismic-zone').value;
+            const region = document.getElementById('region').value;
+            
+            const zoneData = NEC_TABLES.ZONE_FACTORS[zone];
+            const eta = NEC_TABLES.ETA_FACTORS[region];
+            
+            document.getElementById('z-value').textContent = zoneData.Z;
+            document.getElementById('risk-characterization').textContent = zoneData.risk;
+            document.getElementById('eta-value').textContent = eta;
+            
+            calculateAll();
+        }
+
+        // ACTUALIZAR PERFIL DE SUELO
+        function updateSoilProfile() {
+            const soilType = document.getElementById('soil-type').value;
+            const soilProfile = NEC_TABLES.SOIL_PROFILES[soilType];
+            const zone = document.getElementById('seismic-zone').value;
+            
+            document.getElementById('soil-description').textContent = soilProfile.description;
+            document.getElementById('soil-definition').textContent = soilProfile.definition;
+            
+            // Mostrar/ocultar campos personalizados para suelo F
+            if (soilType === 'F') {
+                document.getElementById('soil-f-custom').style.display = 'grid';
+                // Usar valores personalizados
+                document.getElementById('fa-value').textContent = document.getElementById('fa-custom').value;
+                document.getElementById('fd-value').textContent = document.getElementById('fd-custom').value;
+                document.getElementById('fs-value').textContent = document.getElementById('fs-custom').value;
+            } else {
+                document.getElementById('soil-f-custom').style.display = 'none';
+                // Usar valores de tabla
+                document.getElementById('fa-value').textContent = soilProfile.factors[zone].Fa;
+                document.getElementById('fd-value').textContent = soilProfile.factors[zone].Fd;
+                document.getElementById('fs-value').textContent = soilProfile.factors[zone].Fs;
+            }
+            
+            calculateAll();
+        }
+
+        // CÁLCULO DE PERIODOS
+        function calculatePeriods() {
+            const hn = parseFloat(document.getElementById('building-height').value);
+            const Ct = parseFloat(document.getElementById('ct-value').textContent);
+            const alpha = parseFloat(document.getElementById('alpha-value').textContent);
+            
+            const T = Ct * Math.pow(hn, alpha);
+            
+            document.getElementById('t-value').textContent = T.toFixed(2);
+            document.getElementById('ct-formula').textContent = Ct;
+            document.getElementById('hn-formula').textContent = hn;
+            document.getElementById('alpha-formula').textContent = alpha;
+            document.getElementById('t-result').textContent = T.toFixed(2);
+            
+            calculateAll();
+        }
+
+        // CÁLCULO PRINCIPAL
+        function calculateAll() {
+            calculatePeriods();
+            updateSummaryTable();
+        }
+
+        // ACTUALIZAR TABLA RESUMEN
+        function updateSummaryTable() {
+            // Información básica
+            document.getElementById('summary-zone').textContent = document.getElementById('seismic-zone').value;
+            document.getElementById('summary-region').textContent = document.getElementById('region').options[document.getElementById('region').selectedIndex].text;
+            document.getElementById('summary-soil').textContent = document.getElementById('soil-type').options[document.getElementById('soil-type').selectedIndex].text;
+            document.getElementById('summary-z').textContent = document.getElementById('z-value').textContent;
+            document.getElementById('summary-risk').textContent = document.getElementById('risk-characterization').textContent;
+            document.getElementById('summary-eta').textContent = document.getElementById('eta-value').textContent;
+            
+            // Factores de sitio
+            document.getElementById('summary-fa').textContent = document.getElementById('fa-value').textContent;
+            document.getElementById('summary-fd').textContent = document.getElementById('fd-value').textContent;
+            document.getElementById('summary-fs').textContent = document.getElementById('fs-value').textContent;
+            
+            // Periodos límite
+            const Fa = parseFloat(document.getElementById('fa-value').textContent);
+            const Fd = parseFloat(document.getElementById('fd-value').textContent);
+            const Fs = parseFloat(document.getElementById('fs-value').textContent);
+            
+            const To = 0.1 * (Fd * Fs / Fa);
+            const Tc = 0.55 * (Fd * Fs / Fa);
+            const Tl = 2.4 * Fd;
+            
+            document.getElementById('summary-to').textContent = To.toFixed(2) + ' s';
+            document.getElementById('summary-tc').textContent = Tc.toFixed(2) + ' s';
+            document.getElementById('summary-tl').textContent = Tl.toFixed(2) + ' s';
+            
+            // Aceleraciones
+            const Z = parseFloat(document.getElementById('z-value').textContent);
+            const eta = parseFloat(document.getElementById('eta-value').textContent);
+            
+            const Sa0 = Z * Fa;
+            const SaPlateau = Z * eta * Fa;
+            
+            document.getElementById('summary-sa0').textContent = Sa0.toFixed(2) + ' g';
+            document.getElementById('summary-sa-plateau').textContent = SaPlateau.toFixed(2) + ' g';
+            
+            // Factores estructurales
+            document.getElementById('summary-i').textContent = document.getElementById('i-value').textContent;
+            document.getElementById('summary-phip').textContent = document.getElementById('phi-p-value').textContent;
+            document.getElementById('summary-phie').textContent = document.getElementById('phi-e-value').textContent;
+            document.getElementById('summary-r').textContent = document.getElementById('r-value').textContent;
+            document.getElementById('summary-ct').textContent = document.getElementById('ct-value').textContent;
+            document.getElementById('summary-alpha').textContent = document.getElementById('alpha-value').textContent;
+            document.getElementById('summary-t').textContent = document.getElementById('t-value').textContent + ' s';
+            
+            // Factor de reducción y cortante basal
+            const I = parseFloat(document.getElementById('i-value').textContent);
+            const R = parseFloat(document.getElementById('r-value').textContent);
+            const phip = parseFloat(document.getElementById('phi-p-value').textContent);
+            const phie = parseFloat(document.getElementById('phi-e-value').textContent);
+            
+            // CORRECCIÓN: f = 1 / (R × Øp × Øe)
+            const f = 1 / (R * phip * phie);
+            document.getElementById('summary-f').textContent = f.toFixed(3);
+            
+            // Cortante basal
+            const W = parseFloat(document.getElementById('seismic-weight').value);
+            // CORRECCIÓN: V = (I × Sa × W) / (R × Øp × Øe)
+            const V = (I * SaPlateau * W) / (R * phip * phie);
+            document.getElementById('summary-v').textContent = V.toFixed(1) + ' Ton';
+        }
+
+        // ACTUALIZAR COLORES DEL GRÁFICO
+        function updateChartColors() {
+            const elasticColor = document.getElementById('elastic-color').value;
+            const reducedColor = document.getElementById('reduced-color').value;
+            
+            document.getElementById('elastic-preview').style.backgroundColor = elasticColor;
+            document.getElementById('reduced-preview').style.backgroundColor = reducedColor;
+            
+            if (spectrumChartInstance) {
+                spectrumChartInstance.data.datasets[0].borderColor = elasticColor;
+                spectrumChartInstance.data.datasets[0].backgroundColor = elasticColor + '20';
+                spectrumChartInstance.data.datasets[1].borderColor = reducedColor;
+                spectrumChartInstance.data.datasets[1].backgroundColor = reducedColor + '20';
+                spectrumChartInstance.update();
+            }
+        }
+// ACTUALIZAR TAMAÑO DE PUNTOS
+function updatePointSize() {
+    const size = parseFloat(document.getElementById('point-size').value);
+    document.getElementById('point-size-value').textContent = size;
+    
+    if (spectrumChartInstance) {
+        spectrumChartInstance.data.datasets[0].pointRadius = size;
+        spectrumChartInstance.data.datasets[1].pointRadius = size;
+        spectrumChartInstance.update();
+    }
+}
+        // GENERAR ESPECTRO DE DISEÑO
+        function calculateSpectrum() {
+            const Z = parseFloat(document.getElementById('z-value').textContent);
+            const Fa = parseFloat(document.getElementById('fa-value').textContent);
+            const eta = parseFloat(document.getElementById('eta-value').textContent);
+            const Fd = parseFloat(document.getElementById('fd-value').textContent);
+            const Fs = parseFloat(document.getElementById('fs-value').textContent);
+            const R = parseFloat(document.getElementById('r-value').textContent);
+            const phip = parseFloat(document.getElementById('phi-p-value').textContent);
+            const phie = parseFloat(document.getElementById('phi-e-value').textContent);
+            
+            const r = document.getElementById('soil-type').value === 'E' ? 1.5 : 1.0;
+            // CORRECCIÓN: f = 1 / (R × Øp × Øe)
+            const f = 1 / (R * phip * phie);
+            
+            const To = 0.1 * (Fd * Fs / Fa);
+            const Tc = 0.55 * (Fd * Fs / Fa);
+            const Tl = 2.4 * Fd;
+            
+            // Generar datos del espectro según las coordenadas especificadas
+            spectrumData.periods = [];
+            spectrumData.elastic = [];
+            spectrumData.reduced = [];
+            
+            // Punto 0: (0, Sa)
+            const Sa0 = Z * Fa;
+            spectrumData.periods.push(0);
+            spectrumData.elastic.push(Sa0);
+            spectrumData.reduced.push(Sa0 * f);
+            
+            // Punto T0: (T0, Sa1)
+            const Sa1 = Z * eta * Fa;
+            spectrumData.periods.push(To);
+            spectrumData.elastic.push(Sa1);
+            spectrumData.reduced.push(Sa1 * f);
+            
+            // Punto Tc: (Tc, Sa1)
+            spectrumData.periods.push(Tc);
+            spectrumData.elastic.push(Sa1);
+            spectrumData.reduced.push(Sa1 * f);
+            
+            // Curva descendente: desde Tc hasta Tl con incrementos de 0.1
+            for (let T = Tc + 0.1; T <= Tl; T += 0.1) {
+                const SaCurve = Z * eta * Fa * Math.pow(Tc / T, r);
+                spectrumData.periods.push(T);
+                spectrumData.elastic.push(SaCurve);
+                spectrumData.reduced.push(SaCurve * f);
+            }
+            
+            // Punto Tl
+            const SaTl = Z * eta * Fa * Math.pow(Tc / Tl, r);
+            spectrumData.periods.push(Tl);
+            spectrumData.elastic.push(SaTl);
+            spectrumData.reduced.push(SaTl * f);
+            
+            drawSpectrumChart();
+            showSpectrumTable();
+        }
+
+        // DIBUJAR GRÁFICO
+        function drawSpectrumChart() {
+            const ctx = document.getElementById('spectrumChart').getContext('2d');
+            const elasticColor = document.getElementById('elastic-color').value;
+            const reducedColor = document.getElementById('reduced-color').value;
+            
+            if (spectrumChartInstance) {
+                spectrumChartInstance.destroy();
+            }
+            
+            spectrumChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: spectrumData.periods.map(p => p.toFixed(2)),
+                    datasets: [
+                        {
+                            label: 'Espectro Elástico',
+                            data: spectrumData.elastic,
+                            borderColor: elasticColor,
+                            backgroundColor: elasticColor + '20',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0
+                        },
+                        {
+                            label: 'Espectro Reducido',
+                            data: spectrumData.reduced,
+                            borderColor: reducedColor,
+                            backgroundColor: reducedColor + '20',
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Periodo (s)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Aceleración (g)'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Espectros de Diseño - NEC-15'
+                  },
+                legend: {
+                    labels: {
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        boxWidth: 10
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    radius: 0  // Tamaño global en 0
+                }
+            }
+        }
+    });
+}
+
+        // MOSTRAR TABLA DEL ESPECTRO
+        function showSpectrumTable() {
+            const container = document.getElementById('spectrum-table-container');
+            let html = '<div class="table-container"><table>';
+            html += '<thead><tr><th>Periodo (s)</th><th>Espectro Elástico (g)</th><th>Espectro Reducido (g)</th></tr></thead>';
+            html += '<tbody>';
+            
+            for (let i = 0; i < spectrumData.periods.length; i++) {
+                html += `<tr>
+                    <td>${spectrumData.periods[i].toFixed(2)}</td>
+                    <td>${spectrumData.elastic[i].toFixed(4)}</td>
+                    <td>${spectrumData.reduced[i].toFixed(4)}</td>
+                </tr>`;
+            }
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // FUNCIONES DE EXPORTACIÓN
+        function exportChartToPDF() {
+            if (!spectrumChartInstance) {
+                alert('Primero debe calcular el espectro');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            
+            pdf.setFontSize(16);
+            pdf.text('Espectro de Diseño - NEC-15', 105, 15, { align: 'center' });
+            
+            const chartImage = spectrumChartInstance.toBase64Image();
+            pdf.addImage(chartImage, 'PNG', 10, 25, 190, 120);
+            
+            pdf.setFontSize(10);
+            pdf.text(`Proyecto: ${document.getElementById('seismic-zone').value} - ${document.getElementById('soil-type').options[document.getElementById('soil-type').selectedIndex].text}`, 10, 155);
+            pdf.text(`Fecha: ${new Date().toLocaleDateString()}`, 10, 165);
+            
+            pdf.save('espectro_diseno_nec15.pdf');
+        }
+
+        function exportChartToImage() {
+            if (!spectrumChartInstance) {
+                alert('Primero debe calcular el espectro');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.download = 'espectro_diseno.png';
+            link.href = spectrumChartInstance.toBase64Image();
+            link.click();
+        }
+
+        function exportTableToPDF() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            
+            pdf.setFontSize(16);
+            pdf.text('Tabla de Espectro de Diseño - NEC-15', 105, 15, { align: 'center' });
+            
+            const tableData = [['Periodo (s)', 'Espectro Elástico (g)', 'Espectro Reducido (g)']];
+            
+            for (let i = 0; i < spectrumData.periods.length; i++) {
+                tableData.push([
+                    spectrumData.periods[i].toFixed(2),
+                    spectrumData.elastic[i].toFixed(4),
+                    spectrumData.reduced[i].toFixed(4)
+                ]);
+            }
+            
+            pdf.autoTable({
+                startY: 25,
+                head: [tableData[0]],
+                body: tableData.slice(1)
+            });
+            
+            pdf.save('tabla_espectro_nec15.pdf');
+        }
+
+        function exportTableToExcel() {
+            const data = [['Periodo (s)', 'Espectro Elástico (g)', 'Espectro Reducido (g)']];
+            
+            for (let i = 0; i < spectrumData.periods.length; i++) {
+                data.push([
+                    spectrumData.periods[i],
+                    spectrumData.elastic[i],
+                    spectrumData.reduced[i]
+                ]);
+            }
+            
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, 'Espectro de Diseño');
+            XLSX.writeFile(wb, 'espectro_diseno_nec15.xlsx');
+        }
+
+function exportFullReport() {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+    
+    // Configuración inicial
+    let yPos = 20;
+    const margin = 20;
+    const pageHeight = pdf.internal.pageSize.height;
+    
+    // Función para verificar si necesita nueva página
+    function checkPageBreak(heightNeeded) {
+        if (yPos + heightNeeded > pageHeight - margin) {
+            pdf.addPage();
+            yPos = margin;
+        }
+    }
+    
+    // Portada
+    pdf.setFontSize(20);
+    pdf.text('INFORME CARACTERIZACIÓN SÍSMICA', 105, yPos, { align: 'center' });
+    yPos += 15;
+    pdf.setFontSize(16);
+    pdf.text('Norma Ecuatoriana de la Construcción NEC-15', 105, yPos, { align: 'center' });
+    yPos += 20;
+    pdf.setFontSize(12);
+    pdf.text(`Proyecto: ${document.getElementById('project-name').value}`, 105, yPos, { align: 'center' });
+    yPos += 10;
+    pdf.text(`Fecha: ${new Date().toLocaleDateString()}`, 105, yPos, { align: 'center' });
+    yPos += 30;
+    
+    // 1. INFORMACIÓN DEL PROYECTO
+    checkPageBreak(50);
+    pdf.setFontSize(14);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('1. INFORMACIÓN DEL PROYECTO', margin, yPos);
+    yPos += 10;
+    pdf.setFontSize(11);
+    pdf.setFont(undefined, 'normal');
+    pdf.text(`• Nombre del Proyecto: ${document.getElementById('project-name').value}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Altura del Edificio (hn): ${document.getElementById('building-height').value} m`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• TX - Per. Nat. de Vibr. en X: ${document.getElementById('tx-period').value} s`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• TY - Per. Nat. de Vibr. en Y: ${document.getElementById('ty-period').value} s`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Peso Sísmico (W): ${document.getElementById('seismic-weight').value} Ton`, margin, yPos);
+    yPos += 15;
+    
+    // 2. CONDICIONES DE DISEÑO
+    checkPageBreak(40);
+    pdf.setFontSize(14);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('2. CONDICIONES DE DISEÑO', margin, yPos);
+    yPos += 10;
+    pdf.setFontSize(11);
+    pdf.setFont(undefined, 'normal');
+    pdf.text(`• Zona Sísmica: ${document.getElementById('seismic-zone').value}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Aceleración de la zona (Z): ${document.getElementById('z-value').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Caracterización del peligro: ${document.getElementById('risk-characterization').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Región: ${document.getElementById('region').options[document.getElementById('region').selectedIndex].text}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Relación de amplificación espectral (η): ${document.getElementById('eta-value').textContent}`, margin, yPos);
+    yPos += 15;
+    
+    // 3. GEOLOGÍA LOCAL
+    checkPageBreak(50);
+    pdf.setFontSize(14);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('3. GEOLOGÍA LOCAL', margin, yPos);
+    yPos += 10;
+    pdf.setFontSize(11);
+    pdf.setFont(undefined, 'normal');
+    pdf.text(`• Tipo de Suelo: ${document.getElementById('soil-type').options[document.getElementById('soil-type').selectedIndex].text}`, margin, yPos);
+    yPos += 7;
+    pdf.setFont(undefined, 'italic');
+    pdf.text(`  Descripción: ${document.getElementById('soil-description').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`  Definición: ${document.getElementById('soil-definition').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.setFont(undefined, 'normal');
+    pdf.text(`• Fa (Factor de amplificación): ${document.getElementById('fa-value').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Fd (Factor de desplazamiento): ${document.getElementById('fd-value').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Fs (Factor inelástico): ${document.getElementById('fs-value').textContent}`, margin, yPos);
+    yPos += 15;
+    
+    // 4. CONFIGURACIÓN ESTRUCTURAL
+    checkPageBreak(50);
+    pdf.setFontSize(14);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('4. CONFIGURACIÓN ESTRUCTURAL', margin, yPos);
+    yPos += 10;
+    pdf.setFontSize(11);
+    pdf.setFont(undefined, 'normal');
+    pdf.text(`• Factor de Importancia (I): ${document.getElementById('i-value').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Irregularidad en Planta (Øp): ${document.getElementById('phi-p-value').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Irregularidad en Elevación (Øe): ${document.getElementById('phi-e-value').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Factor de Reducción (R): ${document.getElementById('r-value').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Ct (Coeficiente): ${document.getElementById('ct-value').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• α (Impedancia del semiespacio): ${document.getElementById('alpha-value').textContent}`, margin, yPos);
+    yPos += 7;
+    pdf.text(`• Periodo Fundamental (T): ${document.getElementById('t-value').textContent} s`, margin, yPos);
+    yPos += 15;
+    
+    // 5. INTERPRETACIÓN Y RECOMENDACIONES
+    checkPageBreak(40);
+    pdf.setFontSize(14);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('5. INTERPRETACIÓN Y RECOMENDACIONES', margin, yPos);
+    yPos += 10;
+    pdf.setFontSize(11);
+    pdf.setFont(undefined, 'normal');
+    
+    const interpretation = [
+        `• Sitio: ${document.getElementById('seismic-zone').value} - ${document.getElementById('risk-characterization').textContent.toLowerCase()} sismicidad`,
+        `• Aceleración máxima en roca: ${document.getElementById('z-value').textContent}g`,
+        `• Amplificación espectral: ${document.getElementById('eta-value').textContent}`,
+        `• Perfil de suelo: ${document.getElementById('soil-type').options[document.getElementById('soil-type').selectedIndex].text}`,
+        `• Factor de importancia: ${document.getElementById('i-value').textContent}`,
+        `• Recomendación: ${getDesignRecommendation()}`
+    ];
+    
+    interpretation.forEach(line => {
+        checkPageBreak(7);
+        pdf.text(line, margin, yPos);
+        yPos += 7;
+    });
+    yPos += 10;
+    
+    // 6. TABLA DE DATOS DEL ESPECTRO
+    checkPageBreak(50);
+    pdf.setFontSize(14);
+    pdf.setFont(undefined, 'bold');
+    pdf.text('6. TABLA DE DATOS DEL ESPECTRO', margin, yPos);
+    yPos += 15;
+    
+    // Crear tabla de datos del espectro
+    if (spectrumData.periods.length > 0) {
+        const tableData = [['Periodo (s)', 'Espectro Elástico (g)', 'Espectro Reducido (g)']];
+        
+        for (let i = 0; i < spectrumData.periods.length; i++) {
+            tableData.push([
+                spectrumData.periods[i].toFixed(2),
+                spectrumData.elastic[i].toFixed(4),
+                spectrumData.reduced[i].toFixed(4)
+            ]);
+        }
+        
+        // Usar autoTable para crear la tabla
+        pdf.autoTable({
+            startY: yPos,
+            head: [tableData[0]],
+            body: tableData.slice(1),
+            theme: 'grid',
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [52, 152, 219] }
+        });
+        
+        // Actualizar posición Y después de la tabla
+        yPos = pdf.lastAutoTable.finalY + 10;
+    } else {
+        pdf.setFontSize(10);
+        pdf.text('No hay datos del espectro disponibles', margin, yPos);
+        yPos += 10;
+    }
+    
+    // Gráfico del espectro (si está disponible)
+    if (spectrumChartInstance) {
+        checkPageBreak(150);
+        pdf.setFontSize(14);
+        pdf.setFont(undefined, 'bold');
+        pdf.text('GRÁFICO DEL ESPECTRO DE DISEÑO', margin, yPos);
+        yPos += 10;
+        
+        const chartImage = spectrumChartInstance.toBase64Image();
+        pdf.addImage(chartImage, 'PNG', margin, yPos, 170, 100);
+    }
+    
+    pdf.save('informe_completo_nec15.pdf');
+}
+
+        function getDesignRecommendation() {
+            const zone = document.getElementById('seismic-zone').value;
+            const soil = document.getElementById('soil-type').value;
+            const importance = document.getElementById('i-value').textContent;
+            
+            let recommendation = "Estructura con diseño sismo resistente estándar.";
+            
+            if (zone === 'VI' || zone === 'V') {
+                recommendation = "Se requiere diseño sismo resistente especial con revisión exhaustiva.";
+            }
+            
+            if (soil === 'E' || soil === 'F') {
+                recommendation += " Evaluación geotécnica específica obligatoria.";
+            }
+            
+            if (importance === '1.5') {
+                recommendation += " Verificación de desempeño inmediato post-sismo requerida.";
+            }
+            
+            return recommendation;
+        }
+
+        // INICIALIZAR APLICACIÓN
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar navegación
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showSection(this.getAttribute('data-target'));
+                });
+            });
+
+            // Inicializar valores
+            updateDesignConditions();
+            updateSoilProfile();
+            calculateAll();
+            
+            // Event listeners para campos personalizados de suelo F
+            document.getElementById('fa-custom').addEventListener('input', updateSoilProfile);
+            document.getElementById('fd-custom').addEventListener('input', updateSoilProfile);
+            document.getElementById('fs-custom').addEventListener('input', updateSoilProfile);
+            
+            // Cerrar modal al hacer clic fuera
+            document.getElementById('previewModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closePreview();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

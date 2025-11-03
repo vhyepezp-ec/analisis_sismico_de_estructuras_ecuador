@@ -1,0 +1,318 @@
+/* Variables CSS */
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --accent-color: #e74c3c;
+    --light-color: #ecf0f1;
+    --dark-color: #34495e;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+}
+
+/* Reset y estilos base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #333;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* Estructura principal */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+header {
+    background: var(--primary-color);
+    color: white;
+    padding: 20px 30px;
+    text-align: center;
+    border-bottom: 5px solid var(--secondary-color);
+}
+
+header h1 {
+    font-size: 2em;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.app-container {
+    display: flex;
+    min-height: 80vh;
+}
+
+/* Barra lateral */
+.sidebar {
+    width: 300px;
+    background: var(--light-color);
+    padding: 15px;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+}
+
+.step-indicator {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    background: var(--light-color);
+    padding: 6px 10px;
+    border-radius: 5px;
+    font-weight: 600;
+    font-size: 0.85em;
+}
+
+.step-number {
+    background: var(--secondary-color);
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    font-size: 0.8em;
+}
+
+.nav-item {
+    display: block;
+    padding: 12px 15px;
+    margin-bottom: 6px;
+    background: white;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--dark-color);
+    font-weight: 600;
+    transition: var(--transition);
+    border-left: 4px solid transparent;
+    box-shadow: var(--box-shadow);
+    font-size: 0.9em;
+}
+
+.nav-item:hover, .nav-item.active {
+    background: var(--secondary-color);
+    color: white;
+    border-left-color: var(--accent-color);
+    transform: translateX(3px);
+}
+
+/* Contenido principal */
+.content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    max-height: 80vh;
+}
+
+.section {
+    display: none;
+    animation: fadeIn 0.5s;
+}
+
+.section.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.section-title {
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--secondary-color);
+    padding-bottom: 8px;
+}
+
+/* Componentes de formulario */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.form-group input, .form-group select {
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+}
+
+/* Tarjetas */
+.card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--box-shadow);
+    border-left: 4px solid var(--secondary-color);
+}
+
+/* Grids de resultados */
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.result-item {
+    background: var(--light-color);
+    padding: 15px;
+    border-radius: var(--border-radius);
+    text-align: center;
+}
+
+.result-item.highlight {
+    background: #e8f4fd;
+    border-left: 4px solid var(--accent-color);
+    font-weight: bold;
+}
+
+.factor-value {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin: 5px 0;
+}
+
+/* Botones */
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.btn:hover {
+    background: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.btn-accent {
+    background: var(--accent-color);
+}
+
+.btn-success {
+    background: var(--success-color);
+}
+
+.btn-warning {
+    background: var(--warning-color);
+}
+
+/* Tablas */
+.table-container {
+    overflow-x: auto;
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+tr:hover {
+    background-color: #f5f5f5;
+}
+
+.radio-table tr {
+    cursor: pointer;
+}
+
+.radio-table tr.selected {
+    background-color: #e8f4fd;
+}
+
+/* Gráficos */
+.chart-container {
+    position: relative;
+    height: 400px;
+    margin: 20px 0;
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--box-shadow);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .app-container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .results-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}

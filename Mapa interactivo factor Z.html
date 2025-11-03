@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Sísmico de Ecuador - Factores Z</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e5799 0%, #207cca 51%, #2989d8 100%);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 24px;
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .search-container {
+            position: relative;
+            width: 350px;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 12px 45px 12px 15px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        #search-input:focus {
+            outline: none;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+            background: white;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            pointer-events: none;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            border: 1px solid #e9ecef;
+            border-top: none;
+        }
+
+        .search-result-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-result-item:hover {
+            background: linear-gradient(135deg, #f0f5ff, #e8f4ff);
+            transform: translateX(5px);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-info {
+            flex: 1;
+        }
+
+        .result-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 3px;
+        }
+
+        .result-details {
+            font-size: 0.85rem;
+            color: #6c757d;
+            display: flex;
+            gap: 10px;
+        }
+
+        .result-type {
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .result-type.provincia {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .result-type.canton {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .result-z {
+            font-weight: 600;
+            color: #2c3e50;
+            background: #fff3e0;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .search-stats {
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: center;
+        }
+
+        .map-type-selector {
+            display: flex;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 5px;
+        }
+
+        .map-type-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .map-type-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: white;
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            overflow-y: auto;
+            z-index: 500;
+        }
+
+        .sidebar-section {
+            margin-bottom: 25px;
+        }
+
+        .sidebar-section h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #1e5799;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-box {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .info-box h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: #1e5799;
+        }
+
+        .z-value-display {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+            background: #f0f5ff;
+            transition: all 0.3s ease;
+        }
+
+        .location-details {
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .location-details p {
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .location-details p:last-child {
+            border-bottom: none;
+        }
+
+        .location-details strong {
+            color: #2c3e50;
+            display: inline-block;
+            width: 120px;
+        }
+
+        .population-info {
+            background: #e8f5e8;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .legend {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+
+        .legend-item:hover {
+            background: #f8f9fa;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .zoom-level-info {
+            background: #f0f5ff;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+
+        .zoom-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 400;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .zoom-btn:hover {
+            background: #f0f5ff;
+        }
+
+        .current-level {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 400;
+        }
+
+        .level-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #1e5799;
+            color: white;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 15px;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .search-container {
+                width: 100%;
+            }
+
+            .main-content {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 40vh;
+            }
+
+            .map-container {
+                height: 60vh;
+            }
+        }
+
+        /* Estilos para los marcadores */
+        .marker-provincia {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .marker-canton {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Animaciones */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .search-results.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        /* Scrollbar personalizado */
+        .search-results::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .search-results::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 0 0 15px 0;
+        }
+
+        .search-results::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .search-results::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <h1>Mapa Sísmico de Ecuador - Factores Z</h1>
+                </div>
+                <div class="controls">
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Buscar provincia, cantón... Ej: Guayaquil, Azuay">
+                        <div class="search-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="search-results" id="search-results"></div>
+                    </div>
+                    <div class="map-type-selector">
+                        <button class="map-type-btn active" data-map="osm">Mapa</button>
+                        <button class="map-type-btn" data-map="dark">Oscuro</button>
+                        <button class="map-type-btn" data-map="satellite">Satélite</button>
+                        <button class="map-type-btn" data-map="topo">Relieve</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h2><i class="fas fa-info-circle"></i> Información del Lugar</h2>
+                    <div class="info-box">
+                        <h3>Factor Z Sísmico</h3>
+                        <div class="z-value-display" id="z-value">-</div>
+                        <div class="location-details" id="location-details">
+                            <p>Seleccione una ubicación en el mapa para ver su información sísmica.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h2><i class="fas fa-layer-group"></i> Leyenda</h2>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #4CAF50;"></div>
+                            <span>Zona I (Z = 0.15) - Intermedia</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #FFEB3B;"></div>
+                            <span>Zona II (Z = 0.25) - Alta</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #FF9800;"></div>
+                            <span>Zona III (Z = 0.3) - Alta</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #FF5722;"></div>
+                            <span>Zona IV (Z = 0.35) - Alta</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #F44336;"></div>
+                            <span>Zona V (Z = 0.4) - Alta</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background-color: #B71C1C;"></div>
+                            <span>Zona VI (Z ≥ 0.5) - Muy Alta</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h2><i class="fas fa-search-plus"></i> Niveles de Zoom</h2>
+                    <div class="zoom-level-info">
+                        <p><strong>Zoom 1-6:</strong> Provincias</p>
+                        <p><strong>Zoom 7+:</strong> Cantones</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="map-container">
+                <div id="map"></div>
+                <div class="zoom-controls">
+                    <button class="zoom-btn" id="zoom-in"><i class="fas fa-plus"></i></button>
+                    <button class="zoom-btn" id="zoom-out"><i class="fas fa-minus"></i></button>
+                </div>
+                <div class="current-level">
+                    Nivel actual: <span class="level-badge" id="current-level">Provincias</span>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Mapa Sísmico de Ecuador - Factores Z | Datos proporcionados por el Instituto Geofísico</p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+    <script>
+        // Datos completos de provincias y cantones con información de población
+        const data = {
+            provincias: [
+                { nombre: "AZUAY", coordenadas: [-2.8992, -78.9833], z: 0.25, poblacion: "881394 habitantes", capital: "Cuenca" },
+                { nombre: "BOLÍVAR", coordenadas: [-1.6061, -79.0039], z: 0.35, poblacion: "209933 habitantes", capital: "Guaranda" },
+                { nombre: "CAÑAR", coordenadas: [-2.7392, -78.8472], z: 0.3, poblacion: "281396 habitantes", capital: "Azogues" },
+                { nombre: "CARCHI", coordenadas: [0.8117, -77.7194], z: 0.4, poblacion: "186869 habitantes", capital: "Tulcán" },
+                { nombre: "CHIMBORAZO", coordenadas: [-1.6742, -78.6483], z: 0.35, poblacion: "524004 habitantes", capital: "Riobamba" },
+                { nombre: "COTOPAXI", coordenadas: [-0.9347, -78.6153], z: 0.3, poblacion: "488716 habitantes", capital: "Latacunga" },
+                { nombre: "EL ORO", coordenadas: [-3.2625, -79.9625], z: 0.3, poblacion: "715751 habitantes", capital: "Machala" },
+                { nombre: "ESMERALDAS", coordenadas: [0.9567, -79.6542], z: 0.5, poblacion: "643654 habitantes", capital: "Esmeraldas" },
+                { nombre: "GALÁPAGOS", coordenadas: [-0.777259, -91.142578], z: 0.3, poblacion: "33112 habitantes", capital: "Puerto Baquerizo Moreno" },
+                { nombre: "GUAYAS", coordenadas: [-2.19, -79.8872], z: 0.5, poblacion: "4243259 habitantes", capital: "Guayaquil" },
+                { nombre: "IMBABURA", coordenadas: [0.355, -78.13], z: 0.4, poblacion: "476257 habitantes", capital: "Ibarra" },
+                { nombre: "LOJA", coordenadas: [-3.9931, -79.2044], z: 0.3, poblacion: "521154 habitantes", capital: "Loja" },
+                { nombre: "LOS RIOS", coordenadas: [-0.9000, -79.4833], z: 0.35, poblacion: "921763 habitantes", capital: "Babahoyo" },
+                { nombre: "MANABI", coordenadas: [-1.0500, -80.4500], z: 0.5, poblacion: "1567819 habitantes", capital: "Portoviejo" },
+                { nombre: "MORONA SANTIAGO", coordenadas: [-2.3086, -78.1081], z: 0.3, poblacion: "196535 habitantes", capital: "Macas" },
+                { nombre: "NAPO", coordenadas: [-0.9875, -77.8153], z: 0.4, poblacion: "133705 habitantes", capital: "Tena" },
+                { nombre: "ORELLANA", coordenadas: [-0.4658, -76.9869], z: 0.15, poblacion: "161338 habitantes", capital: "Puerto Francisco de Orellana" },
+                { nombre: "PASTAZA", coordenadas: [-1.4867, -78.0031], z: 0.3, poblacion: "114202 habitantes", capital: "Puyo" },
+                { nombre: "PICHINCHA", coordenadas: [-0.2194, -78.5125], z: 0.5, poblacion: "3167555 habitantes", capital: "Quito" },
+                { nombre: "SANTA ELENA", coordenadas: [-2.2264, -80.8589], z: 0.5, poblacion: "401178 habitants", capital: "Santa Elena" },
+                { nombre: "STO. DOMINGO DE LOS TSACHILAS", coordenadas: [-0.2500, -79.1667], z: 0.35, poblacion: "458580 habitantes", capital: "Santo Domingo" },
+                { nombre: "SUCUMBIOS", coordenadas: [-0.1833, -76.6333], z: 0.15, poblacion: "230503 habitantes", capital: "Nueva Loja" },
+                { nombre: "TUNGURAHUA", coordenadas: [-1.2417, -78.6167], z: 0.35, poblacion: "590600 habitantes", capital: "Ambato" },
+                { nombre: "ZAMORA CHINCHIPE", coordenadas: [-4.0689, -78.9567], z: 0.3, poblacion: "120416 habitantes", capital: "Zamora" }
+            ],
+            cantones: [
+                // Cantones de AZUAY
+                { nombre: "CUENCA", coordenadas: [-2.9006, -79.0045], z: 0.25, provincia: "AZUAY" },
+                { nombre: "CHORDELEG", coordenadas: [-3.0333, -78.7667], z: 0.25, provincia: "AZUAY" },
+                { nombre: "GUALACEO", coordenadas: [-2.8936, -78.7784], z: 0.25, provincia: "AZUAY" },
+                { nombre: "SEVILLA DE ORO", coordenadas: [-2.7833, -78.6167], z: 0.25, provincia: "AZUAY" },
+                { nombre: "EL PAN", coordenadas: [-2.7928, -78.7739], z: 0.25, provincia: "AZUAY" },
+                { nombre: "PAUTE", coordenadas: [-2.7833, -78.7667], z: 0.25, provincia: "AZUAY" },
+                
+                // Cantones de BOLÍVAR
+                { nombre: "GUARANDA", coordenadas: [-1.6073, -79.0392], z: 0.35, provincia: "BOLÍVAR" },
+                { nombre: "SAN MIGUEL", coordenadas: [-1.7075, -79.0431], z: 0.35, provincia: "BOLÍVAR" },
+                { nombre: "CHILLANES", coordenadas: [-1.9333, -79.0833], z: 0.35, provincia: "BOLÍVAR" },
+                { nombre: "CHIMBO", coordenadas: [-1.7000, -79.0167], z: 0.35, provincia: "BOLÍVAR" },
+                { nombre: "LAS NAVES", coordenadas: [-1.5556, -79.7667], z: 0.3, provincia: "BOLÍVAR" },
+                { nombre: "ECHEANDIA", coordenadas: [-1.4333, -79.2833], z: 0.3, provincia: "BOLÍVAR" },
+                
+                // Cantones de CAÑAR
+                { nombre: "CAÑAR", coordenadas: [-2.5500, -78.9333], z: 0.3, provincia: "CAÑAR" },
+                { nombre: "EL TAMBO", coordenadas: [-2.5000, -78.9167], z: 0.3, provincia: "CAÑAR" },
+                { nombre: "LA TRONCAL", coordenadas: [-2.4236, -79.3347], z: 0.4, provincia: "CAÑAR" },
+                { nombre: "DELEG", coordenadas: [-2.7167, -78.7667], z: 0.25, provincia: "CAÑAR" },
+                { nombre: "AZOGUES", coordenadas: [-2.7397, -78.8486], z: 0.25, provincia: "CAÑAR" },
+                { nombre: "BIBLIAN", coordenadas: [-2.7167, -78.8667], z: 0.25, provincia: "CAÑAR" },
+                
+                // Cantones de CARCHI
+                { nombre: "SAN PEDRO DE HUACA", coordenadas: [0.6167, -77.7167], z: 0.4, provincia: "CARCHI" },
+                { nombre: "TULCAN", coordenadas: [0.8119, -77.7178], z: 0.4, provincia: "CARCHI" },
+                { nombre: "ESPEJO", coordenadas: [0.5184, -77.9001], z: 0.4, provincia: "CARCHI" },
+                { nombre: "MONTUFAR", coordenadas: [0.5833, -77.8333], z: 0.4, provincia: "CARCHI" },
+                { nombre: "BOLIVAR", coordenadas: [0.4667, -77.8833], z: 0.4, provincia: "CARCHI" },
+                { nombre: "MIRA", coordenadas: [0.6000, -77.7333], z: 0.4, provincia: "CARCHI" },
+                
+                // Cantones de CHIMBORAZO
+                { nombre: "COLTA", coordenadas: [-1.7167, -78.7667], z: 0.35, provincia: "CHIMBORAZO" },
+                { nombre: "PALLATANGA", coordenadas: [-1.9833, -78.9667], z: 0.4, provincia: "CHIMBORAZO" },
+                { nombre: "GUANO", coordenadas: [-1.6000, -78.6333], z: 0.4, provincia: "CHIMBORAZO" },
+                { nombre: "PENIPE", coordenadas: [-1.5667, -78.5333], z: 0.4, provincia: "CHIMBORAZO" },
+                { nombre: "RIOBAMBA", coordenadas: [-1.6667, -78.6333], z: 0.4, provincia: "CHIMBORAZO" },
+                { nombre: "CHAMBO", coordenadas: [-1.7333, -78.5667], z: 0.4, provincia: "CHIMBORAZO" },
+                { nombre: "GUAMOTE", coordenadas: [-1.9333, -78.7167], z: 0.4, provincia: "CHIMBORAZO" },
+                { nombre: "CHUNCHI", coordenadas: [-2.2833, -78.9167], z: 0.35, provincia: "CHIMBORAZO" },
+                { nombre: "ALAUSI", coordenadas: [-2.2000, -78.8500], z: 0.35, provincia: "CHIMBORAZO" },
+                
+                // Cantones de COTOPAXI
+                { nombre: "PUJILI", coordenadas: [-0.9500, -78.7000], z: 0.3, provincia: "COTOPAXI" },
+                { nombre: "LA MANA", coordenadas: [-0.9333, -79.2167], z: 0.3, provincia: "COTOPAXI" },
+                { nombre: "PANGUA", coordenadas: [-0.9500, -78.9333], z: 0.3, provincia: "COTOPAXI" },
+                { nombre: "SIGCHOS", coordenadas: [-0.6667, -78.8833], z: 0.3, provincia: "COTOPAXI" },
+                { nombre: "SALCEDO", coordenadas: [-1.0333, -78.5833], z: 0.4, provincia: "COTOPAXI" },
+                { nombre: "LATACUNGA", coordenadas: [-0.9333, -78.6167], z: 0.4, provincia: "COTOPAXI" },
+                { nombre: "SAQUISILI", coordenadas: [-0.8333, -78.6667], z: 0.4, provincia: "COTOPAXI" },
+                
+                // Cantones de EL ORO
+                { nombre: "PORTOVELO", coordenadas: [-3.7167, -79.6167], z: 0.3, provincia: "EL ORO" },
+                { nombre: "CHILLA", coordenadas: [-3.5500, -79.6833], z: 0.3, provincia: "EL ORO" },
+                { nombre: "ATAHUALPA", coordenadas: [-3.4667, -79.7333], z: 0.3, provincia: "EL ORO" },
+                { nombre: "PIÑAS", coordenadas: [-3.6811, -79.6808], z: 0.3, provincia: "EL ORO" },
+                { nombre: "ZARUMA", coordenadas: [-3.6914, -79.6119], z: 0.3, provincia: "EL ORO" },
+                { nombre: "HUAQUILLAS", coordenadas: [-3.4753, -80.2308], z: 0.4, provincia: "EL ORO" },
+                { nombre: "SANTA ROSA", coordenadas: [-3.4500, -79.9667], z: 0.4, provincia: "EL ORO" },
+                { nombre: "ARENILLAS", coordenadas: [-3.5500, -80.0667], z: 0.4, provincia: "EL ORO" },
+                { nombre: "MACHALA", coordenadas: [-3.2667, -79.9667], z: 0.4, provincia: "EL ORO" },
+                { nombre: "BALSAS", coordenadas: [-3.5167, -79.7500], z: 0.35, provincia: "EL ORO" },
+                { nombre: "MARCABELI", coordenadas: [-3.7167, -79.9167], z: 0.35, provincia: "EL ORO" },
+                { nombre: "PASAJE", coordenadas: [-3.3333, -79.8167], z: 0.35, provincia: "EL ORO" },
+                { nombre: "EL GUABO", coordenadas: [-3.4500, -79.8333], z: 0.4, provincia: "EL ORO" },
+                
+                // Cantones de ESMERALDAS
+                { nombre: "QUININDE", coordenadas: [0.3500, -79.4500], z: 0.5, provincia: "ESMERALDAS" },
+                { nombre: "ATACAMES", coordenadas: [0.8667, -79.8500], z: 0.5, provincia: "ESMERALDAS" },
+                { nombre: "MUISNE", coordenadas: [0.6000, -80.0167], z: 0.5, provincia: "ESMERALDAS" },
+                { nombre: "ESMERALDAS", coordenadas: [0.9667, -79.6500], z: 0.5, provincia: "ESMERALDAS" },
+                { nombre: "SAN LORENZO", coordenadas: [1.2864, -78.8353], z: 0.5, provincia: "ESMERALDAS" },
+                { nombre: "LA CONCORDIA", coordenadas: [0.0000, -79.3833], z: 0.5, provincia: "ESMERALDAS" },
+                { nombre: "ELOY ALFARO", coordenadas: [0.6000, -79.7500], z: 0.5, provincia: "ESMERALDAS" },
+                
+                // Cantones de GUAYAS
+                { nombre: "GUAYAQUIL", coordenadas: [-2.1833, -79.8833], z: 0.5, provincia: "GUAYAS" },
+                { nombre: "PLAYAS", coordenadas: [-2.6333, -80.3833], z: 0.5, provincia: "GUAYAS" },
+                { nombre: "PEDRO CARBO", coordenadas: [-1.8167, -80.2333], z: 0.5, provincia: "GUAYAS" },
+                { nombre: "EMPALME", coordenadas: [-2.1667, -79.6167], z: 0.35, provincia: "GUAYAS" },
+                { nombre: "SAN JACINTO DE YAGUACHI", coordenadas: [-2.1000, -79.6833], z: 0.35, provincia: "GUAYAS" },
+                { nombre: "MILAGRO", coordenadas: [-2.1333, -79.6000], z: 0.35, provincia: "GUAYAS" },
+                { nombre: "SIMON BOLIVAR", coordenadas: [-2.1500, -79.8833], z: 0.35, provincia: "GUAYAS" },
+                { nombre: "SAMBORONDON", coordenadas: [-1.9500, -79.7333], z: 0.35, provincia: "GUAYAS" },
+                { nombre: "SALITRE", coordenadas: [-1.8333, -79.8167], z: 0.35, provincia: "GUAYAS" },
+                { nombre: "NARANJITO", coordenadas: [-2.2167, -79.4833], z: 0.35, provincia: "GUAYAS" },
+                { nombre: "CRNEL. MARCELINO MARIDUEÑA", coordenadas: [-2.2000, -79.4167], z: 0.35, provincia: "GUAYAS" },
+                { nombre: "ALFREDO BAQUERIZO MORENO", coordenadas: [-1.8500, -79.5333], z: 0.3, provincia: "GUAYAS" },
+                { nombre: "BALZAR", coordenadas: [-1.3667, -79.9000], z: 0.4, provincia: "GUAYAS" },
+                { nombre: "PALESTINA", coordenadas: [-1.9333, -79.7333], z: 0.4, provincia: "GUAYAS" },
+                { nombre: "SANTA LUCIA", coordenadas: [-2.1833, -80.0000], z: 0.4, provincia: "GUAYAS" },
+                { nombre: "DAULE", coordenadas: [-1.8667, -79.9833], z: 0.4, provincia: "GUAYAS" },
+                { nombre: "COLIMES", coordenadas: [-1.5500, -80.0167], z: 0.4, provincia: "GUAYAS" },
+                { nombre: "LOMAS DE SARGENTILLO", coordenadas: [-1.8833, -80.0833], z: 0.4, provincia: "GUAYAS" },
+                { nombre: "ISIDRO AYORA", coordenadas: [-1.8667, -80.1667], z: 0.4, provincia: "GUAYAS" },
+                { nombre: "BALAO", coordenadas: [-2.9167, -79.8167], z: 0.4, provincia: "GUAYAS" },
+                { nombre: "NARANJAL", coordenadas: [-2.6667, -79.6167], z: 0.4, provincia: "GUAYAS" },
+                { nombre: "EL TRIUNFO", coordenadas: [-2.4000, -79.5333], z: 0.4, provincia: "GUAYAS" },
+                { nombre: "NOBOL", coordenadas: [-1.9000, -79.9833], z: 0.4, provincia: "GUAYAS" },
+                { nombre: "DURAN", coordenadas: [-2.1667, -79.8333], z: 0.4, provincia: "GUAYAS" },
+                
+                // Cantones de IMBABURA
+                { nombre: "IBARRA", coordenadas: [0.3500, -78.1167], z: 0.4, provincia: "IMBABURA" },
+                { nombre: "PIMAMPIRO", coordenadas: [0.4000, -77.9667], z: 0.4, provincia: "IMBABURA" },
+                { nombre: "OTAVALO", coordenadas: [0.2333, -78.2667], z: 0.4, provincia: "IMBABURA" },
+                { nombre: "ANTONIO ANTE", coordenadas: [0.3167, -78.1333], z: 0.4, provincia: "IMBABURA" },
+                { nombre: "COTACACHI", coordenadas: [0.3000, -78.2667], z: 0.4, provincia: "IMBABURA" },
+                { nombre: "SAN MIGUEL DE URCUQUI", coordenadas: [0.5000, -78.2333], z: 0.4, provincia: "IMBABURA" },
+                
+                // Cantones de LOJA
+                { nombre: "CHAGUARPAMBA", coordenadas: [-4.3333, -79.7333], z: 0.3, provincia: "LOJA" },
+                { nombre: "PALTAS", coordenadas: [-4.2500, -79.7500], z: 0.3, provincia: "LOJA" },
+                { nombre: "PUYANGO", coordenadas: [-4.0833, -80.1667], z: 0.4, provincia: "LOJA" },
+                { nombre: "MACARA", coordenadas: [-4.3833, -79.9500], z: 0.35, provincia: "LOJA" },
+                { nombre: "CELICA", coordenadas: [-4.1000, -79.9500], z: 0.35, provincia: "LOJA" },
+                { nombre: "SOZORANGA", coordenadas: [-4.3333, -79.8167], z: 0.35, provincia: "LOJA" },
+                { nombre: "CATAMAYO", coordenadas: [-4.0500, -79.3667], z: 0.25, provincia: "LOJA" },
+                { nombre: "ESPINDOLA", coordenadas: [-4.3333, -79.6333], z: 0.25, provincia: "LOJA" },
+                { nombre: "QUILANGA", coordenadas: [-4.3333, -79.4667], z: 0.25, provincia: "LOJA" },
+                { nombre: "CALVAS", coordenadas: [-4.3333, -79.5500], z: 0.25, provincia: "LOJA" },
+                { nombre: "LOJA", coordenadas: [-4.0000, -79.2167], z: 0.25, provincia: "LOJA" },
+                
+                // Cantones de LOS RIOS
+                { nombre: "BUENA FE", coordenadas: [-0.9000, -79.4833], z: 0.35, provincia: "LOS RIOS" },
+                { nombre: "PALENQUE", coordenadas: [-1.4500, -79.7500], z: 0.35, provincia: "LOS RIOS" },
+                { nombre: "VINCES", coordenadas: [-1.5500, -79.7500], z: 0.35, provincia: "LOS RIOS" },
+                { nombre: "BABA", coordenadas: [-1.8000, -79.6667], z: 0.35, provincia: "LOS RIOS" },
+                { nombre: "QUEVEDO", coordenadas: [-1.0333, -79.4500], z: 0.35, provincia: "LOS RIOS" },
+                { nombre: "BABAHOYO", coordenadas: [-1.8167, -79.5167], z: 0.3, provincia: "LOS RIOS" },
+                { nombre: "VALENCIA", coordenadas: [-0.9500, -79.4667], z: 0.3, provincia: "LOS RIOS" },
+                { nombre: "MONTALVO", coordenadas: [-1.8000, -79.3333], z: 0.3, provincia: "LOS RIOS" },
+                { nombre: "QUINSALOMA", coordenadas: [-1.9000, -79.4667], z: 0.3, provincia: "LOS RIOS" },
+                { nombre: "PUEBLOVIEJO", coordenadas: [-1.8333, -79.4167], z: 0.3, provincia: "LOS RIOS" },
+                { nombre: "MOCACHE", coordenadas: [-1.2167, -79.5000], z: 0.3, provincia: "LOS RIOS" },
+                { nombre: "URDANETA", coordenadas: [-1.4500, -79.6333], z: 0.3, provincia: "LOS RIOS" },
+                { nombre: "VENTANAS", coordenadas: [-1.4500, -79.4667], z: 0.3, provincia: "LOS RIOS" },
+                
+                // Cantones de MANABI
+                { nombre: "PORTOVIEJO", coordenadas: [-1.0500, -80.4500], z: 0.5, provincia: "MANABI" },
+                { nombre: "JIPIJAPA", coordenadas: [-1.3333, -80.5833], z: 0.5, provincia: "MANABI" },
+                { nombre: "SUCRE", coordenadas: [-1.2667, -80.4167], z: 0.5, provincia: "MANABI" },
+                { nombre: "FLAVIO ALFARO", coordenadas: [-0.4000, -80.0333], z: 0.5, provincia: "MANABI" },
+                { nombre: "EL CARMEN", coordenadas: [-0.2667, -79.4667], z: 0.5, provincia: "MANABI" },
+                { nombre: "ROCAFUERTE", coordenadas: [-0.9167, -80.4500], z: 0.5, provincia: "MANABI" },
+                { nombre: "BAHIA DE CARAQUEZ", coordenadas: [-0.6000, -80.4167], z: 0.5, provincia: "MANABI" },
+                { nombre: "CHONE", coordenadas: [-0.6833, -80.1000], z: 0.5, provincia: "MANABI" },
+                { nombre: "SAN VICENTE", coordenadas: [-0.5833, -80.4000], z: 0.5, provincia: "MANABI" },
+                { nombre: "BOLIVAR", coordenadas: [-1.5333, -80.0333], z: 0.5, provincia: "MANABI" },
+                { nombre: "JARAMIJO", coordenadas: [-0.9566, -80.6412], z: 0.5, provincia: "MANABI" },
+                { nombre: "SANTA ANA", coordenadas: [-1.2000, -80.3833], z: 0.5, provincia: "MANABI" },
+                { nombre: "MANTA", coordenadas: [-0.9500, -80.7167], z: 0.5, provincia: "MANABI" },
+                { nombre: "MONTECRISTI", coordenadas: [-1.0500, -80.6667], z: 0.5, provincia: "MANABI" },
+                { nombre: "24 DE MAYO", coordenadas: [-1.1667, -80.4167], z: 0.5, provincia: "MANABI" },
+                { nombre: "OLMEDO", coordenadas: [-1.4667, -80.0833], z: 0.5, provincia: "MANABI" },
+                { nombre: "PAJAN", coordenadas: [-1.5667, -80.4167], z: 0.5, provincia: "MANABI" },
+                { nombre: "PUERTO LOPEZ", coordenadas: [-1.5500, -80.8167], z: 0.5, provincia: "MANABI" },
+                { nombre: "PEDERNALES", coordenadas: [0.0833, -80.0500], z: 0.5, provincia: "MANABI" },
+                { nombre: "JUNIN", coordenadas: [-0.9333, -80.2000], z: 0.5, provincia: "MANABI" },
+                { nombre: "TOSAGUA", coordenadas: [-0.7833, -80.2500], z: 0.5, provincia: "MANABI" },
+                { nombre: "JAMA", coordenadas: [-0.2035, -80.2617], z: 0.5, provincia: "MANABI" },
+                { nombre: "PICHINCHA", coordenadas: [-1.0333, -80.1167], z: 0.4, provincia: "MANABI" },
+                
+                // Cantones de MORONA SANTIAGO
+                { nombre: "PALORA", coordenadas: [-1.7000, -77.9333], z: 0.3, provincia: "MORONA SANTIAGO" },
+                { nombre: "PABLO SEXTO", coordenadas: [-2.2000, -77.7000], z: 0.3, provincia: "MORONA SANTIAGO" },
+                { nombre: "LIMON INDANZA", coordenadas: [-2.9500, -78.4333], z: 0.3, provincia: "MORONA SANTIAGO" },
+                { nombre: "SANTIAGO", coordenadas: [-3.0500, -78.0000], z: 0.3, provincia: "MORONA SANTIAGO" },
+                { nombre: "SUCUA", coordenadas: [-2.4667, -78.1667], z: 0.3, provincia: "MORONA SANTIAGO" },
+                { nombre: "MORONA", coordenadas: [-2.1333, -77.8500], z: 0.3, provincia: "MORONA SANTIAGO" },
+                
+                // Cantones de NAPO
+                { nombre: "QUIJOS", coordenadas: [-0.4333, -77.8333], z: 0.4, provincia: "NAPO" },
+                { nombre: "EL CHACO", coordenadas: [-0.3333, -77.8333], z: 0.4, provincia: "NAPO" },
+                { nombre: "ARCHIDONA", coordenadas: [-0.9167, -77.8167], z: 0.35, provincia: "NAPO" },
+                { nombre: "TENA", coordenadas: [-0.9833, -77.8167], z: 0.35, provincia: "NAPO" },
+                
+                // Cantones de ORELLANA
+                { nombre: "LA JOYA DE LOS SACHAS", coordenadas: [-0.6000, -76.8833], z: 0.15, provincia: "ORELLANA" },
+                { nombre: "ORELLANA", coordenadas: [-0.4667, -76.9833], z: 0.15, provincia: "ORELLANA" },
+                { nombre: "AGUARICO", coordenadas: [-0.9333, -75.4000], z: 0.15, provincia: "ORELLANA" },
+                
+                // Cantones de PASTAZA
+                { nombre: "MERA", coordenadas: [-1.4667, -78.1000], z: 0.3, provincia: "PASTAZA" },
+                { nombre: "PASTAZA", coordenadas: [-1.5500, -77.9833], z: 0.3, provincia: "PASTAZA" },
+                
+                // Cantones de PICHINCHA
+                { nombre: "PUERTO QUITO", coordenadas: [0.1167, -79.2500], z: 0.5, provincia: "PICHINCHA" },
+                { nombre: "QUITO", coordenadas: [-0.2200, -78.5125], z: 0.4, provincia: "PICHINCHA" },
+                { nombre: "MEJIA", coordenadas: [-0.5167, -78.5500], z: 0.4, provincia: "PICHINCHA" },
+                { nombre: "CAYAMBE", coordenadas: [0.0500, -78.1500], z: 0.4, provincia: "PICHINCHA" },
+                { nombre: "PEDRO MONCAYO", coordenadas: [0.0500, -78.2667], z: 0.4, provincia: "PICHINCHA" },
+                { nombre: "SAN MIGUEL DE LOS BANCOS", coordenadas: [-0.1500, -78.8667], z: 0.4, provincia: "PICHINCHA" },
+                { nombre: "RUMIÑAHUI", coordenadas: [-0.3167, -78.5167], z: 0.4, provincia: "PICHINCHA" },
+                { nombre: "PEDRO VICENTE MALDONADO", coordenadas: [-0.1000, -78.9167], z: 0.4, provincia: "PICHINCHA" },
+                
+                // Cantones de SANTA ELENA
+                { nombre: "SANTA ELENA", coordenadas: [-2.2267, -80.8583], z: 0.5, provincia: "SANTA ELENA" },
+                { nombre: "SALINAS", coordenadas: [-2.2167, -80.9667], z: 0.5, provincia: "SANTA ELENA" },
+                
+                // Cantones de STO. DOMINGO DE LOS TSACHILAS
+                { nombre: "SANTO DOMINGO", coordenadas: [-0.2500, -79.1667], z: 0.35, provincia: "STO. DOMINGO DE LOS TSACHILAS" },
+                
+                // Cantones de SUCUMBIOS
+                { nombre: "SHUSHUFINDI", coordenadas: [-0.1833, -76.6333], z: 0.15, provincia: "SUCUMBIOS" },
+                { nombre: "LAGO AGRIO", coordenadas: [0.0833, -76.8833], z: 0.15, provincia: "SUCUMBIOS" },
+                { nombre: "CUYABENO", coordenadas: [-0.0167, -76.1667], z: 0.15, provincia: "SUCUMBIOS" },
+                { nombre: "PUTUMAYO", coordenadas: [-0.1000, -75.8667], z: 0.15, provincia: "SUCUMBIOS" },
+                { nombre: "CASCALES", coordenadas: [0.0667, -77.2167], z: 0.25, provincia: "SUCUMBIOS" },
+                { nombre: "GONZALO PIZARRO", coordenadas: [0.1000, -77.3167], z: 0.3, provincia: "SUCUMBIOS" },
+                
+                // Cantones de TUNGURAHUA
+                { nombre: "AMBATO", coordenadas: [-1.2417, -78.6197], z: 0.35, provincia: "TUNGURAHUA" },
+                { nombre: "SANTIAGO DE PILLARO", coordenadas: [-1.1667, -78.5333], z: 0.4, provincia: "TUNGURAHUA" },
+                { nombre: "SAN PEDRO DE PELILEO", coordenadas: [-1.3167, -78.5333], z: 0.4, provincia: "TUNGURAHUA" },
+                { nombre: "PATATE", coordenadas: [-1.3167, -78.5167], z: 0.4, provincia: "TUNGURAHUA" },
+                { nombre: "BAÑOS DE AGUA SANTA", coordenadas: [-1.3964, -78.4247], z: 0.4, provincia: "TUNGURAHUA" },
+                { nombre: "TISALEO", coordenadas: [-1.3500, -78.6333], z: 0.4, provincia: "TUNGURAHUA" },
+                { nombre: "CEVALLOS", coordenadas: [-1.3500, -78.6500], z: 0.4, provincia: "TUNGURAHUA" },
+                { nombre: "QUERO", coordenadas: [-1.3833, -78.6167], z: 0.4, provincia: "TUNGURAHUA" },
+                { nombre: "MOCHA", coordenadas: [-1.4167, -78.6333], z: 0.4, provincia: "TUNGURAHUA" },
+                
+                // Cantones de ZAMORA CHINCHIPE
+                { nombre: "NANGARITZA", coordenadas: [-4.3833, -78.8667], z: 0.3, provincia: "ZAMORA CHINCHIPE" },
+                { nombre: "YANTZAZA", coordenadas: [-3.8333, -78.7500], z: 0.3, provincia: "ZAMORA CHINCHIPE" },
+                { nombre: "CHINCHIPE", coordenadas: [-4.8333, -79.1667], z: 0.25, provincia: "ZAMORA CHINCHIPE" },
+                { nombre: "ZAMORA", coordenadas: [-4.0692, -78.9567], z: 0.25, provincia: "ZAMORA CHINCHIPE" },
+                
+                // Zonas no delimitadas
+                { nombre: "LAS GOLONDRINAS", coordenadas: [0.0000, -78.0000], z: 0.5, provincia: "ZONA NO DELIMITADA" },
+                { nombre: "MANGA DEL CURA", coordenadas: [-1.0000, -79.5000], z: 0.4, provincia: "ZONA NO DELIMITADA" },
+                
+                // Cantones de GALÁPAGOS
+                { nombre: "SAN CRISTÓBAL", coordenadas: [-0.901829, -89.608681], z: 0.3, provincia: "GALÁPAGOS" },
+                { nombre: "SANTA CRUZ", coordenadas: [-0.742710, -90.312710], z: 0.3, provincia: "GALÁPAGOS" },
+                { nombre: "ISABELA", coordenadas: [-0.955256, -91.016968], z: 0.3, provincia: "GALÁPAGOS" }
+            ]
+        };
+
+        // Inicialización del mapa
+        const map = L.map('map').setView([-1.8312, -78.1834], 6);
+
+        // Capas base
+        const baseLayers = {
+            "Mapa Claro": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }),
+            "Mapa Oscuro": L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            }),
+            "Satélite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+            }),
+            "Relieve": L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
+            })
+        };
+
+        // Añadir capa base por defecto
+        baseLayers["Mapa Claro"].addTo(map);
+
+        // Función para obtener color según el valor Z
+        function getColorByZ(z) {
+            if (z === 0.15) return '#4CAF50';      // Verde
+            if (z === 0.25) return '#FFEB3B';      // Amarillo
+            if (z === 0.3) return '#FF9800';       // Naranja claro
+            if (z === 0.35) return '#FF5722';      // Naranja
+            if (z === 0.4) return '#F44336';       // Rojo claro
+            if (z >= 0.5) return '#B71C1C';        // Rojo oscuro
+            return '#9E9E9E';                      // Gris por defecto
+        }
+
+        // Función para obtener clase de marcador según el nivel
+        function getMarkerClass(zoom) {
+            if (zoom <= 6) return 'marker-provincia';
+            return 'marker-canton';
+        }
+
+        // Función para obtener nivel actual según el zoom
+        function getCurrentLevel(zoom) {
+            if (zoom <= 6) return 'Provincias';
+            return 'Cantones';
+        }
+
+        // Función para crear marcador
+        function createMarker(item, zoom, type) {
+            const markerClass = getMarkerClass(zoom);
+            const color = getColorByZ(item.z);
+            
+            const marker = L.circleMarker(item.coordenadas, {
+                radius: type === 'provincia' ? 10 : 8,
+                fillColor: color,
+                color: 'white',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            });
+
+            // Tooltip
+            let tooltipContent = `<strong>${item.nombre}</strong><br>Factor Z: ${item.z}`;
+            if (item.provincia && type === 'canton') tooltipContent += `<br>Provincia: ${item.provincia}`;
+            
+            marker.bindTooltip(tooltipContent);
+            
+            // Evento click
+            marker.on('click', function() {
+                showLocationInfo(item, type);
+            });
+            
+            return marker;
+        }
+
+        // Función para mostrar información de ubicación
+        function showLocationInfo(item, type) {
+            const color = getColorByZ(item.z);
+            document.getElementById('z-value').textContent = item.z;
+            document.getElementById('z-value').style.backgroundColor = color;
+            
+            let details = '';
+            
+            if (type === 'provincia') {
+                details = `
+                    <p><strong>Provincia:</strong> ${item.nombre}</p>
+                    <p><strong>Capital:</strong> ${item.capital}</p>
+                    <p><strong>Factor Z:</strong> ${item.z}</p>
+
+                `;
+            } else {
+                details = `
+                    <p><strong>Cantón:</strong> ${item.nombre}</p>
+                    <p><strong>Provincia:</strong> ${item.provincia}</p>
+                    <p><strong>Factor Z:</strong> ${item.z}</p>
+
+                `;
+            }
+            
+            // Determinar zona sísmica
+            let zona = "";
+            let caracterizacion = "";
+            if (item.z === 0.15) {
+                zona = "I";
+                caracterizacion = "Intermedia";
+            } else if (item.z === 0.25) {
+                zona = "II";
+                caracterizacion = "Alta";
+            } else if (item.z === 0.3) {
+                zona = "III";
+                caracterizacion = "Alta";
+            } else if (item.z === 0.35) {
+                zona = "IV";
+                caracterizacion = "Alta";
+            } else if (item.z === 0.4) {
+                zona = "V";
+                caracterizacion = "Alta";
+            } else if (item.z >= 0.5) {
+                zona = "VI";
+                caracterizacion = "Muy Alta";
+            }
+            
+            details += `<p><strong>Zona Sísmica:</strong> ${zona}</p>`;
+            details += `<p><strong>Caracterización:</strong> ${caracterizacion}</p>`;
+            
+            document.getElementById('location-details').innerHTML = details;
+        }
+
+        // Capas para diferentes niveles
+        const provinciasLayer = L.layerGroup();
+        const cantonesLayer = L.layerGroup();
+
+        // Añadir marcadores a las capas
+        data.provincias.forEach(provincia => {
+            provinciasLayer.addLayer(createMarker(provincia, 6, 'provincia'));
+        });
+
+        data.cantones.forEach(canton => {
+            cantonesLayer.addLayer(createMarker(canton, 7, 'canton'));
+        });
+
+        // Control de capas
+        const overlayMaps = {
+            "Provincias": provinciasLayer,
+            "Cantones": cantonesLayer
+        };
+
+        L.control.layers(baseLayers, overlayMaps).addTo(map);
+
+        // Función para actualizar capas visibles según el nivel de zoom
+        function updateVisibleLayers() {
+            const zoom = map.getZoom();
+            const currentLevel = getCurrentLevel(zoom);
+            
+            // Actualizar indicador de nivel
+            document.getElementById('current-level').textContent = currentLevel;
+            
+            // Mostrar/ocultar capas según el zoom
+            if (zoom <= 6) {
+                provinciasLayer.addTo(map);
+                cantonesLayer.remove();
+            } else {
+                provinciasLayer.remove();
+                cantonesLayer.addTo(map);
+            }
+        }
+
+        // Inicializar capas visibles
+        updateVisibleLayers();
+
+        // Escuchar cambios de zoom
+        map.on('zoomend', updateVisibleLayers);
+
+        // Control de zoom
+        document.getElementById('zoom-in').addEventListener('click', function() {
+            map.zoomIn();
+        });
+
+        document.getElementById('zoom-out').addEventListener('click', function() {
+            map.zoomOut();
+        });
+
+        // Cambiar tipo de mapa
+        document.querySelectorAll('.map-type-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.map-type-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const mapType = this.getAttribute('data-map');
+                Object.values(baseLayers).forEach(layer => {
+                    map.removeLayer(layer);
+                });
+                
+                if (mapType === 'osm') baseLayers["Mapa Claro"].addTo(map);
+                if (mapType === 'dark') baseLayers["Mapa Oscuro"].addTo(map);
+                if (mapType === 'satellite') baseLayers["Satélite"].addTo(map);
+                if (mapType === 'topo') baseLayers["Relieve"].addTo(map);
+                
+                updateVisibleLayers();
+            });
+        });
+
+        // SISTEMA DE BÚSQUEDA MEJORADO CON AUTOCOMPLETADO
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+
+        // Crear índice de búsqueda completo
+        const searchIndex = [];
+        
+        // Agregar provincias al índice
+        data.provincias.forEach(provincia => {
+            searchIndex.push({
+                name: provincia.nombre,
+                type: 'provincia',
+                fullText: `${provincia.nombre} - Provincia`,
+                location: provincia,
+                searchText: provincia.nombre.toLowerCase(),
+                displayText: `${provincia.nombre} (Provincia)`
+            });
+        });
+        
+        // Agregar cantones al índice
+        data.cantones.forEach(canton => {
+            searchIndex.push({
+                name: canton.nombre,
+                type: 'canton',
+                fullText: `${canton.nombre} - ${canton.provincia}`,
+                location: canton,
+                searchText: `${canton.nombre.toLowerCase()} ${canton.provincia.toLowerCase()}`,
+                displayText: `${canton.nombre} (${canton.provincia})`
+            });
+        });
+
+        // Función de búsqueda mejorada con autocompletado
+        function performSearch(query) {
+            if (query.length < 1) {
+                return [];
+            }
+            
+            const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
+            
+            const results = searchIndex.filter(item => {
+                return searchTerms.every(term => item.searchText.includes(term));
+            });
+
+            // Ordenar resultados por relevancia
+            return results.sort((a, b) => {
+                // Priorizar coincidencias exactas al inicio
+                const aStartsWith = a.name.toLowerCase().startsWith(searchTerms[0]);
+                const bStartsWith = b.name.toLowerCase().startsWith(searchTerms[0]);
+                
+                if (aStartsWith && !bStartsWith) return -1;
+                if (!aStartsWith && bStartsWith) return 1;
+                
+                // Priorizar provincias sobre cantones para búsquedas generales
+                if (a.type === 'provincia' && b.type === 'canton') return -1;
+                if (a.type === 'canton' && b.type === 'provincia') return 1;
+                
+                return 0;
+            }).slice(0, 8); // Limitar a 8 resultados
+        }
+
+        // Mostrar sugerencias de autocompletado
+        function showAutocompleteSuggestions(query) {
+            const results = performSearch(query);
+            displaySearchResults(results, true);
+        }
+
+        // Mostrar resultados de búsqueda
+        function displaySearchResults(results, isAutocomplete = false) {
+            searchResults.innerHTML = '';
+            
+            if (results.length > 0) {
+                results.forEach((result, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'search-result-item';
+                    if (index === 0 && isAutocomplete) {
+                        div.style.background = 'linear-gradient(135deg, #f0f5ff, #e8f4ff)';
+                    }
+                    
+                    div.innerHTML = `
+                        <div class="result-info">
+                            <div class="result-name">${result.name}</div>
+                            <div class="result-details">
+                                <span class="result-type ${result.type}">${result.type === 'provincia' ? 'Provincia' : 'Cantón'}</span>
+                                ${result.type === 'canton' ? `<span>${result.location.provincia}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="result-z">Z: ${result.location.z}</div>
+                    `;
+                    
+                    div.addEventListener('click', function() {
+                        selectSearchResult(result);
+                    });
+                    
+                    // Sugerencia rápida con tecla Enter
+                    if (index === 0 && isAutocomplete) {
+                        div.setAttribute('data-suggestion', 'true');
+                    }
+                    
+                    searchResults.appendChild(div);
+                });
+
+                if (!isAutocomplete) {
+                    const stats = document.createElement('div');
+                    stats.className = 'search-stats';
+                    stats.textContent = `${results.length} resultado${results.length !== 1 ? 's' : ''} encontrado${results.length !== 1 ? 's' : ''}`;
+                    searchResults.appendChild(stats);
+                }
+                
+                searchResults.classList.add('show');
+            } else if (!isAutocomplete && searchInput.value.length >= 2) {
+                const noResults = document.createElement('div');
+                noResults.className = 'search-result-item';
+                noResults.innerHTML = `
+                    <div class="result-info">
+                        <div class="result-name">No se encontraron resultados</div>
+                        <div class="result-details">Intente con otros términos de búsqueda</div>
+                    </div>
+                `;
+                searchResults.appendChild(noResults);
+                searchResults.classList.add('show');
+            } else {
+                searchResults.classList.remove('show');
+            }
+        }
+
+        // Seleccionar resultado de búsqueda
+        function selectSearchResult(result) {
+            const location = result.location;
+            const zoomLevel = result.type === 'provincia' ? 7 : 10;
+            
+            map.setView(location.coordenadas, zoomLevel);
+            showLocationInfo(location, result.type);
+            
+            // Actualizar campo de búsqueda con el nombre formateado
+            searchInput.value = result.displayText;
+            searchResults.classList.remove('show');
+            
+            // Destacar el marcador seleccionado
+            highlightSelectedMarker(location, result.type);
+        }
+
+        // Destacar marcador seleccionado
+        function highlightSelectedMarker(location, type) {
+            // Implementar lógica para destacar el marcador seleccionado
+            // Esto podría incluir animaciones o cambios de estilo
+        }
+
+        // Event listeners para búsqueda
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            clearTimeout(searchTimeout);
+            
+            if (query.length === 0) {
+                searchResults.classList.remove('show');
+                return;
+            }
+            
+            if (query.length === 1) {
+                // Mostrar sugerencias después de un breve delay
+                searchTimeout = setTimeout(() => {
+                    showAutocompleteSuggestions(query);
+                }, 300);
+            } else {
+                searchTimeout = setTimeout(() => {
+                    const results = performSearch(query);
+                    displaySearchResults(results, query.length < 3);
+                }, 200);
+            }
+        });
+
+        // Búsqueda con Enter
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const query = this.value.trim();
+                const results = performSearch(query);
+                
+                if (results.length > 0) {
+                    // Seleccionar la primera sugerencia si está visible
+                    const firstSuggestion = searchResults.querySelector('[data-suggestion="true"]');
+                    if (firstSuggestion && searchResults.classList.contains('show')) {
+                        firstSuggestion.click();
+                    } else {
+                        selectSearchResult(results[0]);
+                    }
+                }
+                searchResults.classList.remove('show');
+            }
+            
+            if (e.key === 'Escape') {
+                searchResults.classList.remove('show');
+            }
+        });
+
+        // Cerrar resultados al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.classList.remove('show');
+            }
+        });
+
+        // Sugerencias iniciales al enfocar
+        searchInput.addEventListener('focus', function() {
+            if (this.value.length === 0) {
+                // Mostrar sugerencias populares
+                const popularResults = searchIndex
+                    .filter(item => 
+                        item.name === 'QUITO' || 
+                        item.name === 'GUAYAQUIL' || 
+                        item.name === 'CUENCA' ||
+                        item.name === 'AMBATO'
+                    )
+                    .slice(0, 4);
+                
+                displaySearchResults(popularResults, true);
+            }
+        });
+
+        // Mejorar la experiencia en móviles
+        searchInput.addEventListener('touchstart', function() {
+            this.focus();
+        });
+
+        // Mostrar información inicial de Ecuador
+        setTimeout(() => {
+            const ecuadorInfo = `
+                <p><strong>Bienvenido al Mapa Sísmico</strong></p>
+                <p>Seleccione una provincia o cantón para ver su información sísmica.</p>
+
+            `;
+            document.getElementById('location-details').innerHTML = ecuadorInfo;
+        }, 1000);
+    </script>
+</body>
+</html>
